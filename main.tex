@@ -1,0 +1,73 @@
+\RequirePackage[l2tabu,orthodox]{nag}
+
+% TODO: decide if one-sided/two-sided
+%\documentclass[headsepline,footsepline,footinclude=false,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc,BCOR=12mm,DIV=12]{scrbook} % two-sided
+\documentclass[headsepline,footsepline,footinclude=false,oneside,fontsize=11pt,paper=a4,listof=totoc,bibliography=totoc]{scrbook} % one-sided
+
+% TODO: change citation style in settings
+\input{settings}
+
+% TODO: change thesis information
+\newcommand*{\getUniversity}{Technische Universität München}
+\newcommand*{\getFaculty}{Department of Informatics}
+\newcommand*{\getTitle}{Efficient Code Generation for Regular Expressions}
+\newcommand*{\getTitleGer}{Effiziente Codegenerierung für Reguläre Ausdrücke}
+\newcommand*{\getAuthor}{Mohamed Elzarei}
+\newcommand*{\getDoctype}{Master's Thesis in Informatics}
+\newcommand*{\getSupervisor}{M.Sc. Philipp Fent}
+\newcommand*{\getAdvisor}{Prof. Dr. Thomas Neumann}
+\newcommand*{\getSubmissionDate}{15.06.2022}
+\newcommand*{\getSubmissionLocation}{Munich}
+
+\begin{document}
+
+% Set page numbering to avoid "destination with the same identifier has been already used" warning for cover page.
+% (see https://en.wikibooks.org/wiki/LaTeX/Hyperlinks#Problems_with_Links_and_Pages).
+% \newfontfamily\symbolsfont{Symbola} 
+\pagenumbering{alph}
+\input{pages/cover}
+
+\frontmatter{}
+
+\newenvironment{packed_enum}{
+\begin{enumerate}
+  \setlength{\itemsep}{1pt}
+%   \setlength{\parskip}{0pt}
+%   \setlength{\parsep}{0pt}
+}{\end{enumerate}}
+
+\let\oldhref\href
+\renewcommand{\href}[2]{\oldhref{#1}{\bfseries#2}}
+
+
+\input{pages/title}
+\input{pages/disclaimer}
+\input{pages/acknowledgments}
+\input{pages/abstract}
+\microtypesetup{protrusion=false}
+\tableofcontents{}
+\microtypesetup{protrusion=true}
+
+\mainmatter{}
+
+\input{chapters/01_introduction}
+\input{chapters/02_background}
+\input{chapters/03_implementation}
+\input{chapters/04_evaluation}
+\input{chapters/05_relatedwork}
+\input{chapters/06_conc}
+
+\appendix{}
+
+\microtypesetup{protrusion=false}
+\listoffigures{}
+\listoftables{}
+\renewcommand\listoflistingscaption{List of source codes}
+\listoflistings
+\microtypesetup{protrusion=true}
+% \printbibliography{}
+
+%Imports the bibliography file "sample.bib"
+\bibliography{bibliography}
+
+\end{document}
