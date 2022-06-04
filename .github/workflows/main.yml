@@ -26,11 +26,10 @@ jobs:
           working_directory: .
           latexmk_use_lualatex: true
           latexmk_shell_escape: true
-      - uses: actions/upload-artifact@v2
       - name: Upload
         uses: actions/upload-artifact@master
         with:
           name: main
-          path: main
+          path: "main.pdf"
         if: always()
 
