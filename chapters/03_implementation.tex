@@ -236,7 +236,7 @@ class FiniteAutomatonTransition {
 \caption{Example DFA for pattern \textbf{(a|b|c)d}.}\label{fig:automatonrange}
 \end{figure}
 
-\subsection{Regular Expression to NFA}
+\subsection{Regular Expression to NFA}\label{subsection:regexnfa}
 ANTLR generates in addition to the lexer and parser code an abstract class \texttt{\textbf{ParseTreeVisitor}} that contains methods that are called when walking the Parse Tree and implements the Visitor design pattern. Listing \ref{lst:fasvisitor} shows a snippet of the class. While walking the parse tree we visit each tree node and based on the node type and context we use Thompson's Construction algorithm explained below to generate the NFA.
 
 \subsubsection{Literals}
@@ -460,7 +460,7 @@ public:
 \end{listing}
 
 
-\subsection{NFA to DFA}
+\subsection{NFA to DFA}\label{subsection:nfdtodfa}
 After generating the NFA in the previous step, it is made deterministic using \textit{Powerset Construction} algorithm. The algorithm can transform any NFA to an equivalent deterministic automaton. However, there is one disadvantage: When the algorithm is applied to an NFA with $n$ states the resulting DFA can have an exponentially larger number of states than $2^n$ \cite{dfasize}. To overcome this problem we set an adjustable limit for the number of states the DFA can have If the algorithm exceeds it we use a fallback library to handle this regular expression.
 
 \subsubsection{Powerset Construction}

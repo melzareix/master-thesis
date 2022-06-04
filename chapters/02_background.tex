@@ -1,52 +1,141 @@
 \chapter{Background}\label{chapter:background}
 
 \section{Regular Expressions}
-Regular expressions (Regex) are patterns used to search for character combinations in text using standardized concise syntax. A regular expression can specify both simple and complex character sequence patterns. Table \ref{tab:regexsamp} shows examples of patterns and how they are represented in regular expressions.
+Regular expressions (RegEx) are patterns used to search for character combinations in text using standardized concise syntax. A regular expression can specify both simple and complex character sequence patterns.  Table \ref{tab:regexsamp} shows examples of patterns and how they are represented as regular expressions.
 
-{\renewcommand{\arraystretch}{1.5}% for the vertical padding
-\begin{table}[ht]
+{\renewcommand{\arraystretch}{1.6}% for the vertical padding
+\begin{table}[H]
 \centering
 \begin{adjustbox}{width=1.1\textwidth,center=\textwidth}
 \small
 \begin{tabular}{|l|l|}
 \hline
-Pattern        & Regex  \\
+Pattern Description       & RegEx  \\
 \hline
-String starts with \textbf{hello} and ends in \textbf{world}. & \^{}hello.*world\$ \\
+String starts with \textbf{hello} and ends in \textbf{world}. & \texttt{\textbf{\^{}hello.*world\$}} \\
 \hline
-Validate email address. & \^{}[A-Za-z0-9\_\%+-]+@[A-Za-z0-9.-]+.[A-Za-z]\{2,4\}\$ \\
+Validate email address. & \texttt{\textbf{\^{}[A-Za-z0-9\_\%+-]+@[A-Za-z0-9.-]+.[A-Za-z]\{2,4\}\$}} \\
 \hline
-Any of the words \textbf{cat}, \textbf{dog} or \textbf{turtle}. & .*(cat|dog|turtle).*\\
+Any of the words \textbf{cat}, \textbf{dog} or \textbf{turtle}. & \texttt{\textbf{.*(cat|dog|turtle).*}}\\
 \hline
 \end{tabular}
 \end{adjustbox}
-\caption[Example Regular Expressions]{Example Regular Expressions.}\label{tab:regexsamp}
+\caption{Examples of Regular Expressions.}\label{tab:regexsamp}
 \end{table}}
 
- Regular expressions are useful for a variety of tasks. \textit{Input validation} e.g. to ensure that phone numbers are formatted correctly. \textit{Information search and extraction} e.g retrieving email addresses from documents. \textit{Advanced applications} such as lexical analysis, network intrusion detection, and virus scanning.
+A regular expression is entered as a text string and is compiled into a tiny program designed specifically to identify that pattern by the regular expressions engine. This pattern can be used to find, search for, sub-string, or split text. Regular expressions are useful for a variety of tasks such as:
+ \begin{itemize}
+     \item \textit{Input validation}: e.g. to ensure that phone numbers are formatted correctly.
+     \item \textit{Information search and extraction}: e.g. retrieving email addresses from documents. \item \textit{Advanced applications}: e.g. lexical analysis, network intrusion detection, and virus scanning.
+ \end{itemize}
 
 Regular expressions contain two types of characters:
 \begin{enumerate}
-    \item \textit{Meta-characters} e.g. \textbf{\^\$.*+} are special characters that denote an operator that instructs the regex engine on how to match the other characters in the expression. We explore the meaning of each meta-character in Section \ref{section:parser}. 
-    \item \textit{Literals} which are the actual characters to search for e.g. \textbf{x} will match the lower case character x.
+    \item \textit{Literals} which are the actual characters to search, e.g. \texttt{\textbf{x}} will match the lower case character x.
+    \item \textit{Meta-characters}: e.g. \texttt{\textbf{\^\$.*+}} are special characters that denote an operator that instructs the regex engine on how to match the other characters in the expression. Meta-characters allow regular expressions to be a powerful tool for text manipulation.
 \end{enumerate}
+
+We explore the meaning of each meta-character and the general syntax of Regular Expressions in detail in Section \ref{section:parser}. 
+
 
 \section{Finite Automata}
 
-\section{Regex Matching}
-A regular expression matching engine takes two inputs: input text to match and the regex pattern. The engine then tries to optimize the pattern and then compiles it to a more efficient form.
+Finite Automata (FA) or Finite State Machine (FSM) is an abstract machine for pattern recognition. It has a set of states and rules for transitioning from one state to the next depending on the input symbol used. It is essentially an abstract model of a digital computer. 
 
-\subsection{Automata Matching}
-An Automata based Regex engine compiles the regular expression to an equivalent NFA or DFA. It is proven every regular expression has an equivalent NFA and any NFA can be converted to DFA.
+Finite Automata is defined formally as a 5-tuple, $(Q, Σ, T, q0, F)$ consisting of a finite set of states $Q$, a finite set of input symbols $\Sigma$, a transition function $T: Q \, x \, Σ → \, Q$, an initial state $q0 ∈ Q$, and accept states $F \subseteq Q$.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape]
+
+  \node[state,initial] (p) {$q0$};
+  \node[state] (s2) [right of=p] {$q1$};
+  \node[state,accepting] (s3) [right of=s2] {$q2$};
+  \node[state,accepting] (s4) [below of=s2] {$q3$};
+  \node[state] (s5) [below of=s3] {$q4$};
+
+  \path    (p) edge                          node {$a$} (s2);
+  \path    (p) edge                          node {$b$} (s4);
+  
+  \path    (s2) edge                         node {$b$} (s3);
+  \path    (s2) edge                         node {$a$} (s5);
+
+  \path    (s3) edge                         node {$a, b$} (s5);
+
+  \path    (s4) edge                         node {$a, b$} (s5);
+
+  \path    (s5) edge                        [loop right] node {$a, b$} (s5);
+
+
+\end{tikzpicture}
+\caption{Example of a Finite Automata that recognizes the pattern \texttt{\textbf{ab}} or \texttt{\textbf{b}}.}
+\label{fig:fsm}
+\end{figure}
+
+Finite Automata can represented be as a state transition diagram. Figure \ref{fig:fsm} shows a state transition diagram where $Q = \{q0, q1, q2, q3\}$, $\Sigma = \{a, b\}$, $F = \{q2, q3\}$. In the state transition diagram states are represented by circles. (The numbers inside the circles are labels to help with this conversation; they are not part of how the machine works.). A Finite Automata has two special states: the start state $q0$ and the matching states $F = \{q2, q3\}$. Start states are depicted with lone arrowheads pointing at them, and matching states are drawn as a double circle.
+
+The machine works by reading the input string one character at a time transitioning from a state to another depending on the input character. When the input ends the machine checks if it ended in an accept state then it matches the string, Otherwise, If the machine ends in a non-matching state, it does not match the string. Following the transitions, the automata in Figure \ref{fig:fsm} recognizes either of these two patterns: \texttt{\textbf{ab}} and \texttt{\textbf{b}}.
+
+The automata we have been discussing is called a deterministic finite automaton (DFA), because in any state, each possible input character transitions to at most one new state. There exists another type of Finite Automata called Nondeterministic Finite Automata (NFA) which is similar to DFA except:
+
+\begin{itemize}
+    \item Epsilon transitions ($\epsilon$) are allowed, i.e, it can transition from one state to another without reading an input symbol.
+    \item It can transition to multiple state for a certain input.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape]
+
+  \node[state,initial] (p) {$q0$};
+  \node[state,accepting] (s5) [right of=p] {$q1$};
+
+
+  \path    (p) edge                        [loop above] node {$a, b$} (p);
+  \path    (p) edge                       node {$b$} (s5);
+
+
+\end{tikzpicture}
+\caption{Example of a Non-deterministic Finite Automata.}
+\label{fig:nfafsm}
+\end{figure}
+
+Figure \ref{fig:nfafsm} shows an example of a Non-deterministic Finite Automata. At state $q0$ and reading $b$ the automata can either stay at $q0$ or transition to $q1$. In this case, when two or more transitions are applicable, the NFA "clones" itself into appropriately many copies, each one following a different transition. Therefore, simulating or following the NFA transitions can be exponential in the length of the pattern, i.e, $O(2^n)$.
+
+However, the aforementioned features do not give NFA any additional power. When it comes to power, both are equivalent \cite{nfadfaeq}. In fact, every NFA can be converted to an equivalent DFA. In Subsection \ref{subsection:nfdtodfa}, we show an algorithm for conversion between NFA and DFA.
+
+In the next section, we discuss how we can recognize a regular expression using finite automata.
+
+\newpage
+\section{RegEx Matching}
+
+A RegEx engine is a computer program that takes an input a regular expression and input text to match.
+It compiles the RegEx into a tiny program that is designed specifically to identify that pattern.
+The program is then executed on the input text to look for matches.
+
+Regular expressions engine are typically based on one of two algorithms for matching: Backtracking or DFA.
 
 \subsection{Backtracking}
+
+Backtracking is a general algorithm for solving certain computing problems. It builds candidates gradually to solutions and abandons a candidate (backtracks) when it thinks that the candidate cannot be completed to a valid solution.
+
+Backtracking RegEx engine also called NFA matchers. They compile the regular expression into an equivalent non-deterministic finite automata. NFAs turn out to be exactly equivalent in power to regular expressions and every regex can be converted to an equivalent NFA and vice versa. After building the NFA, they directly simulate the NFA on the input text trying all possible transitions and backtracking when a transition does not lead to an accept state.
+
+The problem with Backtracking is that its running time can be exponential, which simple implementations exhibit when matching against expressions contain both alternation and unbounded quantification and cause the algorithm to examine an exponential number of sub-cases.
+
+Despite the exponential worst-case time guarantee, Backtracking offer significantly more flexibility and expressive capability. For example, any engine that supports the use of back-references must contain some form of backtracking.
+
+\subsection{DFA Matching}
+
+A deterministic finite automata based RegEx engine compiles the regular expression to an equivalent DFA. The DFA can be constructed explicitly and then run on the resulting input string one character at a time. DFA construction for a regular expression of length $n$ has an exponential worst-time guarantee $O(2n)$, but it has a linear match time, i.e, on a string of length $m$ it run in $O(m)$.
+
 
 \section{Unicode}
 The Unicode standard \cite{unicode} is a character encoding standard for multilingual written text that enables reliable and consistent worldwide text data interchange that aims to replace the numerous different ways of encoding characters with a single, universal, efficient and unambiguous standard.
 
 The Unicode standard introduces three concepts to represent text:
 \begin{enumerate}
-    \item \textit{Code Point}: a unique number that maps to a specific character. It usually represents a single grapheme (visible symbols) but sometimes represent control characters, or formatting. The Unicode standard version 14.0 contains \textit{1,114,112} code points, most of which are available for encoding of characters.
+    \item \textit{Code Point}: a unique number that maps to a specific character. It usually represents a single grapheme (visible symbols) but sometimes represents control characters, or formatting. The Unicode standard version 14.0 contains \textit{1,114,112} code points, most of which are available for encoding of characters.
     
     \item \textit{Code Unit}: a number that is used to encode and transmit Unicode text. A single code point is encoded by one or more code units. Each code unit is of the same size, which is determined by the encoding format.
     
@@ -88,7 +177,7 @@ Code points        & Number of encoding bits & Code unit \#1 & Code unit \#2 & C
 \end{adjustbox}
 \caption[UTF-8 Code Points Conversion]{UTF-8 Code point to Code unit Encoding.}\label{tab:utf8}
 \end{table}}
-The algorithm  for encoding UTF-8 \cite{utf8RFC} is as following:
+The algorithm  for encoding UTF-8 \cite{utf8RFC} is as follows:
 \begin{enumerate}
     \item Determine the number of code units required to represent the code unit from Table \ref{tab:utf8}. For example the Phi Symbol $\phi$ has code point \textbf{0x03C6} which falls in the second row range and is encoded using 2 code units.
     
@@ -224,9 +313,10 @@ When translating bytecode into a native machine language, a JIT compiler can per
 \section{SIMD}
 Single Instruction Multiple Data (SIMD) is an instruction set that is available in all modern processors. It exploits data-level parallelism by applying in parallel the same operation to a group of data called \textit{vector} rather than executing multiple instructions. A sequence of isomorphic scalar instructions can thus be replaced by a single SIMD instruction reducing the number of instructions and achieving faster program execution times.
 
-Figure \ref{fig:simdscalar} shows an example for addition using scalar and SIMD operations. Three scalar add instructions are executed sequentially to obtain the summation while only a single SIMD add instruction is required to achieve the same result.
-
-\begin{figure}[ht]
+\begin{figure}[H]
 \includegraphics[width=\textwidth]{imgs/simd-add.png}
 \caption[SIMD vs Scalar]{SIMD vs Scalar Operations \cite{simdscalar}}\label{fig:simdscalar}
 \end{figure}
+
+Figure \ref{fig:simdscalar} shows an example for addition using scalar and SIMD operations. Three scalar add instructions are executed sequentially to obtain the summation while only a single SIMD add instruction is required to achieve the same result.
+
