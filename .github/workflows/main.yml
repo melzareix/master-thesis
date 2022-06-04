@@ -19,14 +19,10 @@ jobs:
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v2
-      - name: Compile basic LaTeX document
-        uses: ./
-        with:
-          root_file: test.tex
-          working_directory: test/
-      - name: Compile LaTeX document with pre/post compile actions
+      - name: Compile LaTeX document
         uses: xu-cheng/latex-action@v2
         with:
           root_file: main.tex
+          args: "-lualatex  -interaction=nonstopmode -outdir=build  -halt-on-error main"
           post_compile: |
             ls test.pdf
