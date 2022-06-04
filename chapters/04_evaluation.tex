@@ -1,5 +1,5 @@
 \chapter{Evaluation}\label{chapter:evaluation}
-In this chapter, we evaluate the performance of our code generating regular expression engine prototype in comparison to other popular C++ regular expressions engines. All the benchmarks were run on a server with a twenty core Intel(R) Core(TM) i9-7900X CPU @ 3.30GHz processor, 128 GiB RAM running Ubuntu 21.10.
+In this chapter, we evaluate the performance of our code generating regular expression engine prototype in comparison to other popular C++ regular expressions engines. All the benchmarks were run on a server with a twenty core Intel(R) Core(TM) i9-7900X @ 3.30GHz processor, 128 GiB RAM running Ubuntu 21.10.
 
 \newcounter{magicrownumbers1}
 \newcounter{magicrownumbers2}
@@ -12,6 +12,8 @@ In this section, We evaluate the compilation time for the two backends \textbf{\
 \subsection{Common Patterns Benchmark}
 RegExLib \cite{regexlib} is a popular Regular Expressions repository on the Web, with expressions for matching URIs, HTML code, C style strings, Java code, SQL queries, spam, and so on. We extracted the top ten non-duplicate patterns from RegExLib to use in this benchmark. In this benchmark, we test for each backend and encoding mechanism how long does it take to compile the input pattern to a DFA and then generate the pattern matching code. 
 
+The results of this benchmark is shown in Figure \ref{fig:eval_common}. These results show what we expected that the LLVM backend compilation is $\mathbf{9x}$ faster than C++ code with both encodings. This is due to the fact that when generating LLVM code everything is done in memory and no CPU time is wasted while for C++ we had to write the code to the disk, wait for the \texttt{clang} compiler to execute then read the generated IR again. It also shows that for this benchmark, UTF-32 encoding is slightly faster at $\mathbf{1.2x}$ that of UTF-8 encoding since it generates smaller overall automatons.
+
 {\renewcommand{\arraystretch}{1.5}% for the vertical padding
 \begin{table}[H]
 \centering
@@ -20,23 +22,22 @@ RegExLib \cite{regexlib} is a popular Regular Expressions repository on the Web,
 \hline
 & Pattern       \\
 \hline
-\rownumberone & \texttt{\textbf{{[}{[}:ALNUM:{]}.\_\%+-{]}+@{[}{[}:ALNUM:{]}.-{]}+.{[}{[}:ALPHA:{]}{]}+}} \\
+\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9 {]}*}}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}2-9{]}{[}0-9{]}\{2\}-{[}0-9{]}\{3\}-{[}0-9{]}\{4\}}}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9.\_\%-{]}+@{[}a-zA-Z0-9.-{]}+.{[}a-zA-Z{]}\{2,6\}}}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}0-9{]}*.?{[}0-9{]}*}}\\ \hline
+\rownumbertwo & \texttt{\textbf{({[}0-1{]}{[}0-9{]}|{[}2{]}{[}0-3{]}):({[}0-5{]}{[}0-9{]})}}\\ \hline
+\rownumbertwo & \texttt{\textbf{({[}0-9{]}\{3\})?|({[}0-9{]}\{3\})({[}-./{]}?)({[}0-9{]}\{3\})({[}0-9-./{]}?)({[}0-9{]}\{4\})}}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}-+{]}?{[}0-9{]}+{[}.{]}?{[}0-9{]}*({[}eE{]}{[}-+{]}?{[}0-9{]}+)?}}\\ \hline
+\rownumbertwo & \texttt{\textbf{({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]}) }}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9@*\#{]}\{8,15\}}}\\ \hline
+\rownumbertwo & \texttt{\textbf{{[}0-9{]}\{1,3\}(,{[}0-9{]}\{3\})*|({[}0-9{]}+)(.{[}0-9{]}\{2\})?}}\\
 \hline
-\rownumberone & \texttt{\textbf{\${[}0-9{]}+(.{[}0-9{]}{[}0-9{]})?}}                                      \\
-\hline
-\rownumberone &\texttt{\textbf{\%AK Email Signup\%}}                                                     \\
-\hline
-\rownumberone &\texttt{\textbf{\%Assistant\%(I)*}}                                                       \\
-\hline
-\rownumberone &\texttt{\textbf{{[}A-Z{]}{[}0-9{]}\{3\}-{[}0{]}{[}A-Z{]}\{2\}}}                          \\
-\hline
-\rownumberone & \texttt{\textbf{\%(汉服|国创|国漫|国潮|姜子牙|哪吒|东方美|中国风)\%}}     \\            
-\hline
+
 \end{tabularx}
-\caption{Sample of the patterns in the Github SQL Benchmark.}\label{tab:samplesql}
+\caption{Patterns in the Common Patterns Benchmark.}\label{tab:cmpbench}
 \end{table}}
 
-The results of this benchmark is shown in Figure \ref{fig:eval_common}. These results show what we expected that the LLVM backend compilation is $\mathbf{9x}$ faster than C++ code with both encodings. This is due to the fact that when generating LLVM code everything is done in memory and no CPU time is wasted while for C++ we had to write the code to the disk, wait for the \texttt{clang} compiler to execute then read the generated IR again. It also shows that for this benchmark, UTF-32 encoding is slightly faster at $\mathbf{1.2x}$ that of UTF-8 encoding since it generates smaller overall automatons.
 
 \begin{figure}[H]
 \hspace*{-45pt}
@@ -89,22 +90,21 @@ The results from the previous benchmark were promising and aligned with our expe
 \hline
 & Pattern       \\
 \hline
-\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9 {]}*}}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}2-9{]}{[}0-9{]}\{2\}-{[}0-9{]}\{3\}-{[}0-9{]}\{4\}}}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9.\_\%-{]}+@{[}a-zA-Z0-9.-{]}+.{[}a-zA-Z{]}\{2,6\}}}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}0-9{]}*.?{[}0-9{]}*}}\\ \hline
-\rownumbertwo & \texttt{\textbf{({[}0-1{]}{[}0-9{]}|{[}2{]}{[}0-3{]}):({[}0-5{]}{[}0-9{]})}}\\ \hline
-\rownumbertwo & \texttt{\textbf{({[}0-9{]}\{3\})?|({[}0-9{]}\{3\})({[}-./{]}?)({[}0-9{]}\{3\})({[}0-9-./{]}?)({[}0-9{]}\{4\})}}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}-+{]}?{[}0-9{]}+{[}.{]}?{[}0-9{]}*({[}eE{]}{[}-+{]}?{[}0-9{]}+)?}}\\ \hline
-\rownumbertwo & \texttt{\textbf{({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]})({[}0-9{]}\{1,2\}|1{[}0-9{]}{[}0-9{]}|2{[}0-4{]}{[}0-9{]}|25{[}0-5{]}) }}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}a-zA-Z0-9@*\#{]}\{8,15\}}}\\ \hline
-\rownumbertwo & \texttt{\textbf{{[}0-9{]}\{1,3\}(,{[}0-9{]}\{3\})*|({[}0-9{]}+)(.{[}0-9{]}\{2\})?}}\\
+\rownumberone & \texttt{\textbf{{[}{[}:ALNUM:{]}.\_\%+-{]}+@{[}{[}:ALNUM:{]}.-{]}+.{[}{[}:ALPHA:{]}{]}+}} \\
 \hline
-
+\rownumberone & \texttt{\textbf{\${[}0-9{]}+(.{[}0-9{]}{[}0-9{]})?}}                                      \\
+\hline
+\rownumberone &\texttt{\textbf{\%AK Email Signup\%}}                                                     \\
+\hline
+\rownumberone &\texttt{\textbf{\%Assistant\%(I)*}}                                                       \\
+\hline
+\rownumberone &\texttt{\textbf{{[}A-Z{]}{[}0-9{]}\{3\}-{[}0{]}{[}A-Z{]}\{2\}}}                          \\
+\hline
+\rownumberone & \texttt{\textbf{\%(汉服|国创|国漫|国潮|姜子牙|哪吒|东方美|中国风)\%}}     \\            
+\hline
 \end{tabularx}
-\caption{Patterns in the Common Patterns Benchmark.}\label{tab:cmpbench}
+\caption{Sample of the patterns in the Github SQL Benchmark.}\label{tab:samplesql}
 \end{table}}
-
 
 Figure \ref{fig:eval_sql} the results of the benchmark. The results again show the compilation performance difference for LLVM and CPP backends. LLVM backend compilation is again $\mathbf{~9x}$ faster than C++ code with both encodings. An interesting result here we see the performance for UTF-8 is $\mathbf{2x}$ faster than UTF-32 for LLVM and $\mathbf{1.6}x$ faster for CPP Backend. This is in contrary to the results from the first benchmark. The reason for this change is the Unicode patterns, While the UTF32 backend generates smaller automatons than UTF-8 It has to read and verify the whole Unicode codepoint when compiling that takes extra time and is slower than UTF8 that treats everything as a byte. To confirm that this is the reason, we removed the Unicode patterns from the list and the result was the UTF-32 encoding was $\mathbf{1.36x}$ faster than UTF-8 for LLVM and $\mathbf{1.22x}$ for C++ Backend.
 
