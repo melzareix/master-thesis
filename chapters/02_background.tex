@@ -1,7 +1,7 @@
 \chapter{Background}\label{chapter:background}
 
 \section{Regular Expressions}
-Regular expressions (RegEx) are patterns used to search for character combinations in text using standardized concise syntax. A regular expression can specify both simple and complex character sequence patterns.  Table \ref{tab:regexsamp} shows examples of patterns and how they are represented as regular expressions.
+Regular expressions (RegExp) are patterns used to search for character combinations in text using standardized concise syntax. A regular expression can specify both simple and complex character sequence patterns.  Table \ref{tab:regexsamp} shows examples of patterns and how they are represented as regular expressions.
 
 {\renewcommand{\arraystretch}{1.6}% for the vertical padding
 \begin{table}[H]
@@ -10,7 +10,7 @@ Regular expressions (RegEx) are patterns used to search for character combinatio
 \small
 \begin{tabular}{|l|l|}
 \hline
-Pattern Description       & RegEx  \\
+Pattern Description       & RegExp  \\
 \hline
 String starts with \textbf{hello} and ends in \textbf{world}. & \texttt{\textbf{\^{}hello.*world\$}} \\
 \hline
@@ -107,10 +107,10 @@ However, the aforementioned features do not give NFA any additional power. When 
 In the next section, we discuss how we can recognize a regular expression using finite automata.
 
 \newpage
-\section{RegEx Matching}
+\section{RegExp Matching}
 
-A RegEx engine is a computer program that takes an input a regular expression and input text to match.
-It compiles the RegEx into a tiny program that is designed specifically to identify that pattern.
+A RegExp engine is a computer program that takes an input a regular expression and input text to match.
+It compiles the RegExp into a tiny program that is designed specifically to identify that pattern.
 The program is then executed on the input text to look for matches.
 
 Regular expressions engine are typically based on one of two algorithms for matching: Backtracking or DFA.
@@ -119,7 +119,7 @@ Regular expressions engine are typically based on one of two algorithms for matc
 
 Backtracking is a general algorithm for solving certain computing problems. It builds candidates gradually to solutions and abandons a candidate (backtracks) when it thinks that the candidate cannot be completed to a valid solution.
 
-Backtracking RegEx engine also called NFA matchers. They compile the regular expression into an equivalent non-deterministic finite automata. NFAs turn out to be exactly equivalent in power to regular expressions and every regex can be converted to an equivalent NFA and vice versa. After building the NFA, they directly simulate the NFA on the input text trying all possible transitions and backtracking when a transition does not lead to an accept state.
+Backtracking RegExp engine also called NFA matchers. They compile the regular expression into an equivalent non-deterministic finite automata. NFAs turn out to be exactly equivalent in power to regular expressions and every regex can be converted to an equivalent NFA and vice versa. After building the NFA, they directly simulate the NFA on the input text trying all possible transitions and backtracking when a transition does not lead to an accept state.
 
 The problem with Backtracking is that its running time can be exponential, which simple implementations exhibit when matching against expressions contain both alternation and unbounded quantification and cause the algorithm to examine an exponential number of sub-cases.
 
@@ -127,7 +127,7 @@ Despite the exponential worst-case time guarantee, Backtracking offer significan
 
 \subsection{DFA Matching}
 
-A deterministic finite automata based RegEx engine compiles the regular expression to an equivalent DFA. The DFA can be constructed explicitly and then run on the resulting input string one character at a time. DFA construction for a regular expression of length $n$ has an exponential worst-time guarantee $O(2n)$, but it has a linear match time, i.e, on a string of length $m$ it run in $O(m)$.
+A deterministic finite automata based RegExp engine compiles the regular expression to an equivalent DFA. The DFA can be constructed explicitly and then run on the resulting input string one character at a time. DFA construction for a regular expression of length $n$ has an exponential worst-time guarantee $O(2n)$, but it has a linear match time, i.e, on a string of length $m$ it run in $O(m)$.
 
 
 \section{Unicode}

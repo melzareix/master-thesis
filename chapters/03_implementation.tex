@@ -557,7 +557,7 @@ Listing \ref{lst:dfainterpreted} shows simplified code for matching using interp
 
 The problem with the interpreted code is
 \begin{enumerate}
-    \item It has lots of indirection and memory access for accessing the DFA state and transition table.
+    \item It has lots of indirection and memory access for accessing the DFA state and transition table. This wastes 100s of CPU cycles \cite{cpumemgap}.
     \item Data is not kept in CPU registers, and registers contents are evicted regularly.
 \end{enumerate}
 

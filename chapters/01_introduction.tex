@@ -2,3 +2,22 @@
 % Add the above to each chapter to make compiling the PDF easier in some editors.
 
 \chapter{Introduction}\label{chapter:introduction}
+
+\section{Motivation}
+String processing tasks are frequently used in analytical queries that power business intelligence. Aside from sub-string matching, which is given by the \texttt{\textbf{like}} operator in SQL that has a limited number of wildcards, popular DBMSs also provide support for regular expressions.
+
+Regular expressions are textual patterns used for text analytics and information extraction using standardized concise syntax. Regular expressions have a more complex usage of wildcards and can be constructed to create a very complex and precise match compared to the \texttt{\textbf{like}} operator.
+
+In the recent years, RegExp is being used in an increasing number of applications throughout the data analytics pipeline. Such applications include: recommendation systems \cite{recsys1}, natural language processing (NLP) \cite{nlp1, nlp2} and graph processing \cite{graph1}. These applications typically involve data-sets of an increasingly large size reaching tens or hundreds of Gigabytes. This raises a challenge for RegExp engines in DBMSs for how to efficiently execute the RegExp queries.
+
+Traditional general purpose RegExp engines (e.g, Boost RegExp \cite{Boost}, RE2 \cite{re2}) are interpreted engines  that for each regular expression they build an in-memory data-structure (or a tiny program) that can match that RegExp. This approach works well for small data-sets but for larger data-sets with millions of rows suffers from: (1) Indirection via memory access which wastes 100s of CPU cycles \cite{cpumemgap}.(2) Data is not kept in CPU registers, and registers contents are evicted regularly.
+
+\citet{querycomp} introduced a unique compilation method that uses the LLVM \cite{llvm} compiler infrastructure framework to convert a database query into compact and efficient machine code. In this thesis, inspired by this work we investigate the compilation of RegExp match queries into an efficient representation that is then translated to native machine code. 
+
+\section{Research Question}
+
+The main research question of this thesis is: Can a code-generating RegExp engine built on top of LLVM be performant?.
+
+To answer this question, we built a prototype RegExp engine on top of LLVM. The engine takes as an input a RegExp pattern and an input text file. As a first step, it generates a data-structure that matches the pattern. It then passes the data-structure to a code-generation module (built on top of LLVM) that is responsible for compiling it into efficient machine code. Finally, The generated code is used to process the input text and do the RegExp matching.
+
+We also compare our implementation with other popular RegExp engines to evaluate the performance and viability of our idea. 
