@@ -12,9 +12,9 @@ In the recent years, RegExp is being used in an increasing number of application
 
 Traditional general purpose RegExp engines (e.g, Boost RegExp \cite{Boost}, RE2 \cite{re2}) are interpreted engines  that for each regular expression they build an in-memory data-structure (or a tiny program) that can match that RegExp. This approach works well for small data-sets but for larger data-sets with millions of rows suffers from: (1) Indirection via memory access which wastes 100s of CPU cycles \cite{cpumemgap}.(2) Data is not kept in CPU registers, and registers contents are evicted regularly.
 
-\citet{querycomp} introduced a unique compilation method that uses the LLVM \cite{llvm} compiler infrastructure framework to convert a database query into compact and efficient machine code. In this thesis, inspired by this work we investigate the compilation of RegExp match queries into an efficient representation that is then translated to native machine code. 
+\citet{querycomp} introduced a unique compilation method that uses the LLVM \cite{llvm} compiler infrastructure framework to convert a database query into compact and efficient machine code. In this thesis, inspired by this work we investigate the compilation of RegExp match queries into an efficient representation that is then translated to native machine code. Our assumption is doing this should be more performant than other interpreted engines when used against large data-sets and the cost of compilation is amortized over the large number of runs.
 
-\section{Research Question}
+\section{Research Question}\label{researchq}
 
 The main research question of this thesis is: Can a code-generating RegExp engine built on top of LLVM be performant?.
 
