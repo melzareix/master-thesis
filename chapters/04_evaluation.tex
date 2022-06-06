@@ -1,7 +1,7 @@
 \chapter{Evaluation}\label{chapter:evaluation}
-In this chapter, we evaluate the performance of our code generating regular expression engine prototype in comparison to other popular C++ regular expressions engines. All the benchmarks were run on a server with a twenty core Intel(R) Core(TM) i9-7900X @ 3.30GHz processor, 128 GiB RAM running Ubuntu 21.10.
+In this chapter, we evaluate the performance of our code generating regular expression engine prototype in comparison to other popular C++ regular expressions engines. All the benchmarks were run on a server with a twenty-core Intel(R) Core(TM) i9-7900X @ 3.30GHz processor, 128 GiB RAM running Ubuntu 21.10.
 
-The code for generating and running benchmarks as well as raw run results are available in our repository on Github \footnote{\url{https://github.com/melzareix/jit-regex}}.
+The code for generating and running benchmarks, as well as raw run results, are available in our repository on Github \footnote{\url{https://github.com/melzareix/jit-regex}}.
 
 \newcounter{magicrownumbers1}
 \newcounter{magicrownumbers2}
@@ -13,14 +13,14 @@ The code for generating and running benchmarks as well as raw run results are av
 \section{DFA Compilation Time Evaluation}
 In this section, We evaluate the compilation time for the two backends \textbf{\{LLVM, CPP\}} and the two Unicode encoding mechanisms \textbf{\{UTF-8, UTF-32\}}.
 
-The aim benchmarking the compilation time is to:
+Benchmarking the compilation time aims to:
 \begin{enumerate}
-    \item Test our assumption that LLVM compilation is faster than C++ for our use-case, and, If our assumptions is correct how much speedup do we get when using LLVM compared to C++.
+    \item Test our assumption that LLVM compilation is faster than C++ for our use-case, and, If our assumptions are correct how much speedup do we get when using LLVM compared to C++.
     
     \item See what is the effect of using different UTF encoding mechanisms on the compilation time for each backend.
 \end{enumerate}
 
-In the following benchmarks, for each backend and encoding mechanism we pass a text file containing a list of RegExps, each backend reads the file line by line, compiles the pattern to a DFA, finally generates code that matches the pattern and JIT into a function that can be used to match the pattern.
+In the following benchmarks, for each backend and encoding mechanism, we pass a text file containing a list of RegExps, each backend reads the file line by line, compiles the pattern to a DFA, and finally generates code that matches the pattern and JIT into a function that can be used to match the pattern.
 
 \subsection{Common Patterns Benchmark}\label{cmnpatt}
 RegExLib \cite{regexlib} is a popular Regular Expressions repository on the Web, with expressions for matching URIs, HTML code, C style strings, Java code, SQL queries, spam, etc. We extracted the top ten rated non-duplicate patterns (listed in Table \ref{tab:cmpbench}) from RegExLib to use in this benchmark.
@@ -50,9 +50,9 @@ RegExLib \cite{regexlib} is a popular Regular Expressions repository on the Web,
 \caption{Patterns in the Common Patterns Benchmark. When compiling all the patterns are prefixed with \texttt{\textbf{\%}} meta-character to find partial matches.}\label{tab:cmpbench}
 \end{table}}
 
-The results of this benchmark is shown in Figure \ref{fig:eval_common}. The results confirm our assumption that the LLVM backend compilation is faster than C++ code with regardless of the Unicode encoding mechanism ($9x$ speedup). This can be explained by the fact that when generating LLVM code everything is done in memory and no CPU time is wasted, While for C++ we have to write the code to the disk, wait for the \texttt{clang} compiler to execute then read the generated IR again before JITing.
+The results of this benchmark are shown in Figure \ref{fig:eval_common}. The results confirm our assumption that the LLVM backend compilation is faster than C++ code with regardless of the Unicode encoding mechanism ($9x$ speedup). This can be explained by the fact that when generating LLVM code everything is done in memory and no CPU time is wasted, While for C++ we have to write the code to the disk, wait for the \texttt{clang} compiler to execute then read the generated IR again before JITing.
 
-The results also shows that for this benchmark, UTF-32 encoding is slightly faster than UTF-8 achieving a speedup of $1.2x$. The reason for this speedup is attributed to the patterns being small in size and number and non-unicode so UTF-32 generates smaller automata and does not take extra time to process the pattern code-points.
+The results also show that for this benchmark, UTF-32 encoding is slightly faster than UTF-8 achieving a speedup of $1.2x$. The reason for this speedup is attributed to the patterns being small in size and number and non-Unicode so UTF-32 generates smaller automata and does not take extra time to process the pattern code-points.
 
 
 \begin{figure}[H]
@@ -120,13 +120,13 @@ ytick style={color=black}
 
 \end{tikzpicture}
 
-\caption{Compilation time performance for the Common Patterns Benchmark. Benchmark was run for three times and the mean ($\mu$) of the three runs is taken. Y-axis is the time (in seconds) taken by each backend to compile \textbf{all} patterns in the benchmark.}
+\caption{Compilation time performance for the Common Patterns Benchmark. Benchmark was run three times and the mean ($\mu$) of the three runs is taken. Y-axis is the time (in seconds) taken by each backend to compile \textbf{all} patterns in the benchmark.}
 \label{fig:eval_common}
 \end{figure}
 
 
 \subsection{GitHub SQL Benchmark}
-The results from the previous benchmark in subsection \ref{cmnpatt} were promising and aligned with our assumptions. To further test our assumptions, we created another benchmark by scraping $524$ RegExps from open-source projects on GitHub. These projects were SQL projects and patterns are SQL-flavored regular expressions. $77$ of these patterns contain Unicode characters which would showcase the performance of the engine on Unicode. Table \ref{tab:samplesql} shows a sample of these patterns.
+The results from the previous benchmark in Subsection \ref{cmnpatt} were promising and aligned with our assumptions. To further test our assumptions, we created another benchmark by scraping $524$ RegExps from open-source projects on GitHub. These projects were SQL projects and patterns are SQL-flavored regular expressions. $77$ of these patterns contain Unicode characters which would showcase the performance of the engine on Unicode. Table \ref{tab:samplesql} shows a sample of these patterns.
 
 {\renewcommand{\arraystretch}{1.2}% for the vertical padding
 \begin{table}[H]
@@ -152,12 +152,12 @@ The results from the previous benchmark in subsection \ref{cmnpatt} were promisi
 \caption{Sample of the patterns in the Github SQL Benchmark. When compiling all the patterns are prefixed with \texttt{\textbf{\%}} meta-character to find partial matches.}\label{tab:samplesql}
 \end{table}}
 
-Figure \ref{fig:eval_sql} the results of the benchmark. The results again show the compilation performance advantage of LLVM backends over C++ backends. LLVM backend compilation achieved a speedup of $\sim9x$ compared to C++ code for both encodings.
+Figure \ref{fig:eval_sql} shows the results of the benchmark. The results again show the compilation performance advantage of LLVM backends over C++ backends. LLVM backend compilation achieved a speedup of $\sim9x$ compared to C++ code for both encodings.
 
 The results also show a performance advantage for UTF-8 over UTF-32 
-with a speedup of $2x$ for LLVM backend and $1.6x$ for C++ backend, in contrary to, the results from the common patterns benchmark. To further investigate the reason behind this, we removed the Unicode patterns from the benchmark and re-ran the benchmark.
+with a speedup of $2x$ for the LLVM backend and $1.6x$ for the C++ backend, contrary to, the results from the common patterns benchmark. To further investigate the reason behind this, we removed the Unicode patterns from the benchmark and re-ran the benchmark.
 
-The results after removing unicode patterns were aligned with the first benchmark. UTF-32 encoding was $1.36x$ faster than UTF-8 for LLVM and $1.22x$ for C++ backend. The reason for this slowdown for UTF-32 on unicode is that although UTF-32 generates smaller automata compared to UTF-8, it has to read and verify the whole Unicode code-point. This takes extra time and is slower than UTF-8 that only works with bytes at compilation.
+The results after removing Unicode patterns were aligned with the first benchmark. UTF-32 encoding was $1.36x$ faster than UTF-8 for LLVM and $1.22x$ for C++ backend. The reason for this slowdown for UTF-32 on Unicode is that although UTF-32 generates smaller automata compared to UTF-8, it has to read and verify the whole Unicode code-point. This takes extra time and is slower than UTF-8 which only works with bytes at compilation.
 
 \begin{figure}[H]
 \centering
@@ -220,27 +220,27 @@ ytick style={color=black}
     ]{98.28};
 \end{axis}
 \end{tikzpicture}
-\caption{Compilation time performance for the Github SQL Benchmark. Benchmark was run for three times and the mean ($\mu$) of the three runs is taken. Y-axis is the time (in seconds) taken by each backend to compile \textbf{all} patterns in the benchmark.}
+\caption{Compilation time performance for the Github SQL Benchmark. Benchmark was run three times and the mean ($\mu$) of the three runs is taken. Y-axis is the time (in seconds) taken by each backend to compile \textbf{all} patterns in the benchmark.}
 
 \label{fig:eval_sql}
 \end{figure}
 
-In conclusion, the two benchmarks in this section confirmed our assumptions regarding the compilation time that LLVM backend code-generation is much faster than C++. It also showed us the compilation performance difference between UTF-8 and UTF-32. While in the average use case where patterns are mostly ASCII only the UTF-32 encoding compiles faster, UTF-8 is faster to compile when dealing with patterns with lots of Unicode code-points.
+In conclusion, the two benchmarks in this section confirmed our assumptions regarding the compilation time that LLVM backend code-generation is much faster than C++. It also showed us the compilation performance difference between UTF-8 and UTF-32. While in the average use case where patterns are mostly ASCII only the UTF-32 encoding compiles faster, UTF-8 is faster to compile when dealing with patterns with lots of Unicode code points.
 
 \section{Matching Performance Evaluation}
 
 In this section, We evaluate the RegExp matching performance of our prototype engine (with its two backends and encoding mechanisms) against other popular C++ regular expressions engines \textbf{\{RE2, PCRE2, Boost\}}.
 
-The aim of this benchmark is to answer our research question in section \ref{researchq} If our prototype engine with code-generation and JIT compilation on top of LLVM can be performant and beat other popular RegExp engines.
+This benchmark aims to answer our research question in Section \ref{researchq} If our prototype engine with code-generation and JIT compilation on top of LLVM can be performant and beat other popular RegExp engines.
 
-In the following benchmarks, for each engine we pass a RegExp pattern and input text (data-set), each engine reads the pattern, compiles it to its internal representation and then tries to match the pattern for each line in the data-set.
+In the following benchmarks, for each engine we pass a RegExp pattern and input text (data-set), each engine reads the pattern, compiles it to its internal representation, and then tries to match the pattern for each line in the data-set.
 
 \subsection{Engines}
 RE2 \cite{re2} is a C++ software library for regular expressions developed and used by Google. It uses a finite-state machine based matching that guarantees that run-time increases linearly (not exponentially) with the size of the input.
 
-PCRE2 \cite{pcre2} is a regular expressions matching library for the C programming language. PCRE's syntax is much more powerful and flexible that of RE2 and many other regular-expression libraries. It uses backtracking as its matching algorithm. In this benchmark, we use PCRE2 with JIT support. We discuss PCRE2 JIT Support in Chapter \ref{chapter:related_work}.
+PCRE2 \cite{pcre2} is a regular expression matching library for the C programming language. PCRE's syntax is much more powerful and flexible than RE2 and many other regular-expression libraries. It uses backtracking as its matching algorithm. In this benchmark, we use PCRE2 with JIT support. We discuss PCRE2 JIT Support in Chapter \ref{chapter:related_work}.
 
-Boost Regex \cite{Boost} is a C++ Regular Expressions Library. It is part of the standard library since C++11. Similar to PCRE2, It uses backtracking algorithm for matching. In this benchmark, we explicitly use Boost version of the library not the one shipped with the \texttt{\textbf{stdlib}} due to a bug in the implementation with long text \footnote{\url{https://gcc.gnu.org/bugzilla/show\_bug.cgi?id=86164}}.
+Boost Regex \cite{Boost} is a C++ Regular Expressions Library. It is part of the standard library since C++11. Similar to PCRE2, It uses a backtracking algorithm for matching. In this benchmark, we explicitly use the Boost version of the library, not the one shipped with the \texttt{\textbf{stdlib}} due to a bug in the implementation with long text \footnote{\url{https://gcc.gnu.org/bugzilla/show\_bug.cgi?id=86164}}.
 
 \subsection{TPC-H Benchmark}
 TPC-H \cite{tpch} is a benchmark for decision support that is used for comparing database vendors. It is composed of a set of business-oriented ad-hoc queries and concurrent data modifications.
@@ -311,14 +311,14 @@ In this benchmark, we test the sub-string literal matching of the different engi
     \label{fig:tpchres}
 \end{figure}
 
-Figure \ref{fig:tpchres} shows the results of the benchmark. The results show that our SIMD implementation based on EPSM algorithm was the fastest engine. It achieved a speed-up of $2x$ over the heavily optimized RE2. It was also slightly faster than PCRE2 with a speedup of $1.1x$. All the engines (Ours, RE2 and PCRE2) were much faster than the baseline Boost achieving $4.8x$, $2.37x$ and $4.36x$ speedup respectively.
+Figure \ref{fig:tpchres} shows the results of the benchmark. The results show that our SIMD implementation based on EPSM algorithm was the fastest engine. It achieved a speed-up of $2x$ over the heavily optimized RE2. It was also slightly faster than PCRE2 with a speedup of $1.1x$. All the engines (Ours, RE2, and PCRE2) were much faster than the baseline Boost achieving $4.8x$, $2.37x$, and $4.36x$ speedup respectively.
 
-The results from this benchmark show the potential performance gains of applying SIMD optimizations to simple patterns and literals. It opens the door for investigating the performance gains by adding these optimizations not only to literals but also for matching sub-patterns inside more complex ones as discussed in Future Work section \ref{futurework}.
+The results from this benchmark show the potential performance gains of applying SIMD optimizations to simple patterns and literals. It opens the door for investigating the performance gains by adding these optimizations not only to literals but also for matching sub-patterns inside more complex ones as discussed in the Future Work section \ref{futurework}.
 
-\subsection{Regex-Redux Benchmark}
-Regex-Redux \cite{regexredux} is a benchmark that consists of nine simple patterns that represent DNA 8-mers and their reverse and a dataset that consists $90,000$ rows of DNA Sequences.
+\subsection{Regex-Redux Benchmark}\label{regexredux}
+Regex-Redux \cite{regexredux} is a benchmark that consists of nine simple patterns that represent DNA 8-mers and their reverse and a dataset that consists of $90,000$ rows of DNA Sequences.
 
-The aim of this benchmark is to be used as baseline for performance analysis. The benchmark consists of simple patterns with alternations that can be optimized by the engines. It also has a relatively small number of of rows so we also investigate the performance hit due to code-generation and compilation.
+This benchmark aims to act as a baseline for performance analysis. The benchmark consists of simple patterns with alternations that can be optimized by the engines. It also has a relatively small number of rows so we also investigate the performance hit due to code-generation and compilation.
 
 {\renewcommand{\arraystretch}{1.5}% for the vertical padding
 \begin{table}[H]
@@ -345,19 +345,19 @@ ag[act]gtaaa|tttac[agt]ct & 12.93 & \bfseries 12.36 & 122.69 & 67.66 & 205.62 & 
 
 Table \ref{tab:evalrgxdna} shows the results for each pattern in the benchmark. RE2 and PCRE2 achieved the top performance while our implementation came at a far third with a slowdown factor of $4x$.
 
-The reasoning behind our slow-down is on these patterns can be optimized into string literals and searched using SIMD operations. PCRE2 does that \cite{pcre2opts} and that is why despite being JITed it still has good performance. RE2 it also uses SIMD and \texttt{\textbf{memchr(3)}} to skip ahead and match such patterns. Also for these patterns the number of matches is too small (less than $0.2\%$) so optimized patterns can skip lots of characters, While, our prototype implementation does not include such optimizations and thus achieved a worse performance and reads all the input text.
+The reasoning behind our slow-down is on these patterns can be optimized into string literals and searched using SIMD operations. PCRE2 does that \cite{pcre2opts} and that is why despite being JITed it still has good performance. RE2 also uses SIMD and \texttt{\textbf{memchr(3)}} to skip ahead and match such patterns. Also for these patterns, the number of matches is too small (less than $0.2\%$) so optimized patterns can skip lots of characters, While, our prototype implementation does not include such optimizations and thus achieved a worse performance and reads all the input text.
 
-The results also show that for our implementation using UTF-32 was faster than UTF-8 with a factor of $2x$. As both the patterns and text does not include Unicode so the compilation time impact on UTF-32 is minimal and at run-time it has overall smaller number of states that increases the matching speed.
+The results also show that our implementation using UTF-32 was faster than UTF-8 with a factor of $2x$. As both, the patterns and text do not include Unicode so the compilation time impact on UTF-32 is minimal and at run-time, it has an overall smaller number of states that increases the matching speed.
 
-The results of this benchmark show the importance of RegExp optimizations for patterns on performance especially with low number of rows where there is not much performance gains from compilation.
+The results of this benchmark show the importance of RegExp optimizations for patterns on performance, especially with a low number of rows where there are not many performance gains from the compilation.
 
 \subsection{Logs Benchmark}
 
-LogHub \cite{loghub} maintains a collection of system logs, which are freely accessible for research purposes. Some of the logs are from prior studies' production data, while others are from genuine systems in our lab environment. The logs are not cleaned, anonymised, or altered in any manner if possible.
+LogHub \cite{loghub} maintains a collection of system logs, which are freely accessible for research purposes. Some of the logs are from prior studies' production data, while others are from genuine systems in our lab environment. The logs are not cleaned, anonymized, or altered in any manner if possible.
 
-In this benchmark, we used the \textit{Spark Logs} dataset from Loghub which contains $33,236,604$ log message from Spark jobs. Table \ref{tab:pattlogbench} shows the four patterns we applied to this dataset to evaluate the performance of the engines. It also shows what each pattern does and the number of expected matches for each pattern. It should be noted that the patterns may not be strictly correct or ideal. We simply require something to test the performance.
+In this benchmark, we used the \textit{Spark Logs} dataset from Loghub which contains $33,236,604$ log messages from Spark jobs. Table \ref{tab:pattlogbench} shows the four patterns we applied to this dataset to evaluate the performance of the engines. It also shows what each pattern does and the number of expected matches for each pattern. It should be noted that the patterns may not be strictly correct or ideal. We simply require something to test the performance.
 
-This aim of this benchmark is to present a real-scenario for our use-case with tens of millions of rows and patterns that aren't too complex but useful for analysis.
+This benchmark aims to present a real scenario for our use case with tens of millions of rows and patterns that aren't too complex but useful for analysis.
 
 {\renewcommand{\arraystretch}{1.3}% for the vertical padding
 \begin{table}[H]
@@ -383,7 +383,7 @@ This aim of this benchmark is to present a real-scenario for our use-case with t
 \end{table}
 }
 
-Table \ref{tab:evallogbench} shows the results of the benchmark for each pattern and engine under test. Boost was the worst performing engine by a factor of $20x-40x$ in comparison to the other engines so we exclude it from the analysis as it struggles with large data-sets and is not suitable for our use-case. Figure \ref{fig:graphlogbench} shows the results after excluding Boost Engine.
+Table \ref{tab:evallogbench} shows the results of the benchmark for each pattern and engine under test. Boost was the worst-performing engine by a factor of $20x-40x$ in comparison to the other engines so we exclude it from the analysis as it struggles with large data sets and is not suitable for our use case. Figure \ref{fig:graphlogbench} shows the results after excluding Boost Engine.
 
 {\renewcommand{\arraystretch}{1.6}% for the vertical padding
 \begin{table}[H]
@@ -404,13 +404,13 @@ URI or Email & 6.73 & 16.86 & \bfseries 6.15 & 10.12 & 6.15 & 9.75 & 192.92\\ \h
 \end{table}
 }
 
-The first pattern matches URIs. $2.37\%$ of the rows match this pattern. The best performing engine was PCRE2 beating our LLVM UTF-8 implementation (second best engine) by speedup factor of $2.36x$. Still both engines were faster than the optimized but interpreted RE2. The results show that JIT compilation was beneficial and the compilation time was amortized over the large number of times the matching function was used. 
+The first pattern matches URIs. $2.37\%$ of the rows match this pattern. The best performing engine was PCRE2 beating our LLVM UTF-8 implementation (second-best engine) by a speedup factor of $2.36x$. Still, both engines were faster than the optimized but interpreted RE2. The results show that JIT compilation was beneficial and the compilation time was amortized over the large number of times the matching function was used. 
 
-The second pattern matches Emails. Less than $0.004\%$ of the rows match this pattern. PCRE2 was once again the fastest engine but by a smaller factor of $1.13x$ than the second best engine (LLVM UTF-8). They both once again were faster than RE2. The drop in performance for PCRE2 can be explained by the much smaller number of matches and therefore a lot of time was spent navigating the text and SIMD optimizations can not be utilized here.
+The second pattern matches Emails. Less than $0.004\%$ of the rows match this pattern. PCRE2 was once again the fastest engine but by a smaller factor of $1.13x$ than the second-best engine (LLVM UTF-8). They both once again were faster than RE2. The drop in performance for PCRE2 can be explained by the much smaller number of matches and therefore a lot of time was spent navigating the text and SIMD optimizations can not be utilized here.
 
-The third pattern matches Dates. Every log line starts with the date therefore, $82.4\%$ of the rows (since a log can span multiple lines) match this pattern. Our Implementation was the fastest on this with a speedup factor of $1.34x$ over the second-best engine PCRE2. This speedup in our engine is due to our early termination in the engine Where, we do not process the line once a match was found and report success immediately and far less time is spent navigating the input text.
+The third pattern matches Dates. Every log line starts with the date therefore, $82.4\%$ of the rows (since a log can span multiple lines) match this pattern. Our Implementation was the fastest on this with a speedup factor of $1.34x$ over the second-best engine PCRE2. This speedup in our engine is due to our early termination in the engine where we do not process the line once a match was found and report success immediately and far less time is spent navigating the input text.
 
-The fourth and last pattern is an alternation of the first and second pattern and matches either a URI or an email. $2.38\%$ of the rows match this pattern. The performance of PCRE2 suddenly dropped on this pattern and the best performing was our implementation followed by RE2. This can be attributed to the fact that PCRE2 use a backtracking algorithm which usually struggles with complex alternations since it has to try both candidates.
+The fourth and last pattern is an alternation of the first and second pattern and matches either a URI or an email. $2.38\%$ of the rows match this pattern. The performance of PCRE2 suddenly dropped on this pattern and the best performing was our implementation followed by RE2. This can be attributed to the fact that PCRE2 uses a backtracking algorithm which usually struggles with complex alternations since it has to try both candidates.
 
 \begin{figure}[H]
     \centering

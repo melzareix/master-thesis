@@ -1,10 +1,10 @@
 \chapter{Implementation}\label{chapter:implementation}
-This chapter covers the details of the implementation of a prototype regular expressions engine that takes an input file and a regular expression pattern that is transformed into efficient machine code and dynamically executed on each line of the input file using LLVM JIT Compiler. The prototype is developed using C++ and can be found on Github \footnote{\url{https://github.com/melzareix/jit-regex}}.
+This chapter covers the details of implementing a prototype regular expressions engine that takes an input file and a regular expression pattern that is transformed into efficient machine code and dynamically executed on each line of the input file using LLVM JIT Compiler. The prototype is developed using C++ and can be found on Github \footnote{\url{https://github.com/melzareix/jit-regex}}.
 
 \section{System Architecture}
-The prototype includes a regular expressions engine called \textit{ZRegex}, A Command Line Interface (CLI) application to interact with the engine, a benchmark suite, and scripts to generate the data and cases for the benchmarks. We discuss the benchmarks in detail in Chapter \ref{chapter:evaluation}. The engine is meant to be used as a sub-engine inside an RDBMS (Relational Database Management System) to provide the functionality of regular expressions matching in a fast and efficient way. The high-level system architecture of the engine is shown in Figure \ref{fig:sa}.
+The prototype includes a regular expressions engine, A Command Line Interface (CLI) application to interact with the engine, a benchmark suite, and scripts to generate the data and cases for the benchmarks. We discuss the benchmarks in detail in Chapter \ref{chapter:evaluation}. The engine is meant to be used as a sub-engine inside an RDBMS (Relational Database Management System) to provide the functionality of regular expressions matching in a fast and efficient way. The high-level system architecture of the engine is shown in Figure \ref{fig:sa}.
 
-The inputs to the engine illustrated as yellow boxes in Figure \ref{fig:sa} are (1) a regular expression pattern to compile (needle) and (2) an input file or string to search for the pattern inside (haystack) (3) Optionally a number of configuration arguments to control the behavior of the engine that are summarized in Table \ref{tab:cliconf}. 
+The inputs to the engine illustrated as yellow boxes in Figure \ref{fig:sa} are (1) a regular expression pattern to compile (needle) and (2) an input file or string to search for the pattern inside (haystack) (3) Optionally several configuration arguments to control the behavior of the engine that are summarized in Table \ref{tab:cliconf}. 
 
 {\renewcommand{\arraystretch}{1.5}% for the vertical padding
 \begin{table}[htpb]
@@ -26,9 +26,9 @@ AsciiEncoding & If true disables UTF-8 handling in the generated code & false \\
 \caption[CLI Configuration Options]{CLI Configuration Options.}\label{tab:cliconf}
 \end{table}}
 
-The engine validates the pattern, parses it and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set which we describe in detail in Section \ref{section:simdopt}.
+The engine validates the pattern, parses it, and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set, which we describe in detail in Section \ref{section:simdopt}.
 
-If the pattern simplicity check fails, the DFA generator traverses the parse tree and produces a minimal DFA that can recognise the regular expression. The \textit{Codegen} module converts the DFA to efficient LLVM IR after that. The LLVM JIT Compiler compiles the IR and returns a function pointer for matching the compiled pattern against the input file.
+If the pattern simplicity check fails, the DFA generator traverses the parse tree and produces a minimal DFA that can recognize the regular expression. The \textit{Codegen} module converts the DFA to efficient LLVM IR after that. The LLVM JIT Compiler compiles the IR and returns a function pointer for matching the compiled pattern against the input file.
 
 \begin{figure}[htpb]
 \centering
@@ -44,19 +44,19 @@ If the pattern simplicity check fails, the DFA generator traverses the parse tre
 % \end{figure}
 
 \section{Parser}\label{section:parser}
-Initially we developed a hand-written parser for regular expressions recognition but it was (1) incredibly time consuming (2) required writing a lot of boilerplate code (3) extending the grammar required modifications to many parts of the source code. Thus, we decided to use a parser generator instead. A parser generator takes a grammar as input and generates source code that recognises the language defined by the grammar.
+Initially, we developed a hand-written parser for regular expressions recognition. However, it was (1) incredibly time-consuming (2) required writing much boilerplate code (3) extending the grammar required modifications to many parts of the source code. Thus, we decided to use a parser generator instead. A parser generator takes a grammar as input and generates source code that recognizes the language defined by the grammar.
 
-We experimented with many parser generators \textit{(f)lex, yacc, bison and ANTLR}. In the end we decided to use ANTLR (ANother Tool for Language Recognition) for the following reasons:
+We experimented with many parser generators \textit{(f)lex, yacc, bison, and ANTLR}. In the end, we decided to use ANTLR (ANother Tool for Language Recognition) for the following reasons:
 
 \begin{packed_enum}
     \item ANTLR allows and encourages the separation between the definition of the language from the code that handles the results, While Flex and Bison support only a grammar that contains actions that result in an ugly, monolithic and unreadable code.
-    \item ANTLR supports writing the grammar in EBNF (Extended Backus–Naur Form) which makes it easier to represent the grammar, While Bison only supports BNF.
-    \item ANTLR supports all unicode flavours, While (f)lex doesn't even support unicode.
+    \item ANTLR supports writing the grammar in EBNF (Extended Backus–Naur Form), making it easier to represent the grammar, While Bison only supports BNF.
+    \item ANTLR supports all Unicode flavors, While (f)lex does not even support Unicode.
 \end{packed_enum}
 
 \noindent ANTLR consists of two parts (1) a translator from the grammar to a lexer and parser in the target language (in our case C++) (2) a run-time library needed by the generated lexer and parser.
 
-\noindent Since the engine is targeted for use inside a RDBMS we use a a SQL compliant grammar based on the grammar from Firebird Database \cite{2022Firebird}. Figure \ref{fig:zregexgrammar} shows the grammar used for the parser (Lexer rules emitted for clarity) in EBNF format. The Grammar shows the elements and rules for building regular expressions which are:
+Since the engine is targeted for use inside a RDBMS, we use a SQL compliant grammar based on the grammar from Firebird Database \cite{2022Firebird}. Figure \ref{fig:zregexgrammar} shows the grammar used for the parser (Lexer rules emitted for clarity) in EBNF format. The grammar shows the elements and rules for building regular expressions, which are:
 
 \begin{figure}[htbp]
 \begin{minted}[breaklines=true,frame=lines,linenos]{antlr}
@@ -87,7 +87,7 @@ specialChar: '*' |  '+' |  Newline |  '?' |  '[' |  ']' |  '{' |  '}' |  '^' |  
 \end{figure}
 
 \begin{itemize}
-    \item \textbf{Meta-Characters}: Special characters that denote an operator that instructs the regex engine how to match the other characters in the expression. List of supported meta-characters are defined in line 21.
+    \item \textbf{Meta-Characters}: Special characters that denote an operator that instructs the regex engine on how to match the other characters in the expression. Line 21 defines a list of supported meta-characters.
     
     \item \textbf{Characters/Literals}: Actual characters that represent themselves. We support all valid Unicode as characters. Meta-characters must be escaped using the escape symbol \textbf{\char`\\} to be used as literals.
     
@@ -95,7 +95,7 @@ specialChar: '*' |  '+' |  Newline |  '?' |  '[' |  ']' |  '{' |  '}' |  '^' |  
     
     \item \textbf{Character Classes}: A character class is defined by a group of characters wrapped in square brackets. A character matches a class in the pattern if the character is a member of the class e.g a pattern \textbf{[abcd]} matches if the string contains \textit{any} of the characters a,b,c,d. A character class can also be negative if it starts with the \textbf{\^{}} symbol meaning it will match any character but the ones defined in the class e.g \textbf{[\^{}ab]} will match \textit{xy} but not \textit{ax}.
     
-    \item \textbf{Character Ranges}: A range is defined by two characters separated by a hyphen within a class specification. A range is made up of the two endpoints and all the characters between them are defined in the class. e.g the character class \textbf{[abcd]} can be defined as an equivalent range \textbf{[a-d]}.
+    \item \textbf{Character Ranges}: A range is defined by two characters separated by a hyphen within a class specification. A range is made up of the two endpoints, and all the characters between them are defined in the class. e.g the character class \textbf{[abcd]} can be defined as an equivalent range \textbf{[a-d]}.
     
     \item \textbf{Quantifiers} A character can be followed by a quantifier that defines how many times the character can be repeated. The available quantifiers are summarized in Table \ref{tab:regexquant}.
     
@@ -138,7 +138,7 @@ specialChar: '*' |  '+' |  Newline |  '?' |  '[' |  ']' |  '{' |  '}' |  '^' |  
 % \end{itemize}
 \section{DFA Generator}
 The parser produces a parse tree that is passed to the DFA Generator module shown in Figure \ref{fig:sa2}.
-This module is responsible for traversing the parse tree and applying Thompson\textquotesingle s Construction algorithm to generate an NFA that recognizes the language defined by the regular expression. The NFA is then converted to an equivalent DFA using the Power-set Construction algorithm. Several optimizations are applied to the DFA to reduce it size and possibly a DFA minimization algorithm e.g. Hopcroft\textquotesingle s algorithm is applied. 
+This module is responsible for traversing the parse tree and applying Thompson\textquotesingle s Construction algorithm to generate an NFA that recognizes the language defined by the regular expression. The NFA is then converted to an equivalent DFA using the Power-set Construction algorithm. Several optimizations are applied to the DFA to reduce its size, and possibly a DFA minimization algorithm, e.g., Hopcroft\textquotesingle s algorithm, is applied. 
 
 
 \begin{figure}[htpb]
@@ -237,11 +237,11 @@ class FiniteAutomatonTransition {
 \end{figure}
 
 \subsection{Regular Expression to NFA}\label{subsection:regexnfa}
-ANTLR generates in addition to the lexer and parser code an abstract class \texttt{\textbf{ParseTreeVisitor}} that contains methods that are called when walking the Parse Tree and implements the Visitor design pattern. Listing \ref{lst:fasvisitor} shows a snippet of the class. While walking the parse tree we visit each tree node and based on the node type and context we use Thompson's Construction algorithm explained below to generate the NFA.
+ANTLR generates, in addition to the lexer and parser code, an abstract class \texttt{\textbf{ParseTreeVisitor}} that contains methods that are called when walking the Parse Tree and implements the Visitor design pattern. Listing \ref{lst:fasvisitor} shows a snippet of the class. While walking the parse tree, we visit each tree node, and based on the node type and context, we apply the appropriate part of Thompson's Construction algorithm explained below to generate the NFA.
 
 \subsubsection{Literals}
 % TODO: one transition
-A character literal is is represented by an automaton of two states as in Figure \ref{fig:auto1}.
+A character literal is represented by an automaton of two states as in Figure \ref{fig:auto1}.
 
 \begin{figure}[htpb]
 \centering
@@ -258,8 +258,10 @@ A character literal is is represented by an automaton of two states as in Figure
 \end{figure}
 
 
-\subsubsection{Alternations}
-A new state \texttt{\textbf{p}} is added with epsilon transition to the start state of each alternation. An epsilon transition from \texttt{\textbf{state0}} to  \texttt{\textbf{state1}} is equivalent to adding all transitions of state1 and marking  \texttt{\textbf{state0}} as accept if  \texttt{\textbf{state1}} was an accept state then removing  \texttt{\textbf{state1}} from the new automaton. Figure \ref{fig:auto2} shows the alternation between the two patterns \texttt{\textbf{a}} and \texttt{\textbf{x}}.
+\subsubsection{Alternations}\label{epsremoval}
+A new state \texttt{\textbf{p}} is added with epsilon transition to the start state of each alternation.
+
+An epsilon transition from \texttt{\textbf{state0}} to  \texttt{\textbf{state1}} is equivalent to adding all transitions of state1 and marking  \texttt{\textbf{state0}} as accept if  \texttt{\textbf{state1}} was an accept state then, removing  \texttt{\textbf{state1}} from the new automaton. Figure \ref{fig:auto2} shows the alternation between the two patterns \texttt{\textbf{a}} and \texttt{\textbf{x}}.
 
 \begin{figure}[htpb]
 \centering
@@ -282,7 +284,7 @@ A new state \texttt{\textbf{p}} is added with epsilon transition to the start st
 \end{figure}
 
 \subsubsection{Concatenation}
-The initial state of the first automaton becomes the initial state of the new NFA, the accept states of the first automaton aren\'t accept anymore and the accept states of the second automaton are the accept states of the new NFA. Figure \ref{fig:auto3} shows the concatenation between two patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.
+The initial state of the first automaton becomes the initial state of the new NFA. The accepting states of the first automaton are marked as not accepting. Moreover, the accept states of the second automaton are the accept states of the new NFA. Figure \ref{fig:auto3} shows the concatenation between two patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.
 
 \begin{figure}[htpb]
 \centering
@@ -360,11 +362,8 @@ The initial state of the first automaton becomes the initial state of the new NF
 \label{fig:autoq2}
 \end{figure}
 
-
-
-\noindent
-\textbf{Counting}\\
-Row 4 in Table \ref{tab:regexquant} is the counting quantifier. It's represented as alternation e.g \texttt{\textbf{a\{1,3\}}} is equivalent to \texttt{\textbf{a(a(a|\epsilon)|\epsilon)}} or \texttt{\textbf{a|aa|aaa}}. Figure \ref{fig:autoq4} shows the example automata.
+\newpage
+\textbf{Counting}: Row 4 in Table \ref{tab:regexquant} is the counting quantifier. It's represented as alternation e.g \texttt{\textbf{a\{1,3\}}} is equivalent to \texttt{\textbf{a(a(a|\epsilon)|\epsilon)}} or \texttt{\textbf{a|aa|aaa}}. Figure \ref{fig:autoq4} shows the example automata.
 
 \begin{figure}[H]
 \centering
@@ -386,10 +385,9 @@ Row 4 in Table \ref{tab:regexquant} is the counting quantifier. It's represented
 
 
 \subsubsection{Character Classes}
-\textit{Positive} Character Classes are treated the same way as alternations e.g NFA for character class \texttt{\textbf{[ax]}} is equivalent to NFA recognizing \texttt{\textbf{a|x}}. Figure \ref{fig:auto2} shows the resulting automaton.
+\textit{Positive} Character Classes are treated the same way as alternations, e.g., NFA for character class \texttt{\textbf{[ax]}} is equivalent to NFA recognizing \texttt{\textbf{a|x}}. Figure \ref{fig:auto2} shows the resulting automaton.
 
-\noindent
-\textit{Negative} Character Classes are equivalent to applying \texttt{\textbf{intersection}} between the \texttt{\textbf{anyChar}} wildcard automata and automata recognizing the \texttt{\textbf{Complement}} of the character class e.g \texttt{\textbf{[\textasciicircum ax]}} is equivalent to \texttt{\textbf{$\_ \cap [ax]$}}. Figure \ref{fig:auto4} shows the result automata where transitions are encoded in hex-decimal and language of the NFA is the ASCII character-set. This is operation is costly since intersection uses the cross-product automaton construction method which requires converting NFA to DFA first and is quadratic in the number of states.
+\textit{Negative} Character Classes are equivalent to applying \texttt{\textbf{intersection}} between the \texttt{\textbf{anyChar}} wildcard automata and automata recognizing the \texttt{\textbf{Complement}} of the character class, e.g. \texttt{\textbf{[\textasciicircum ax]}} is equivalent to \texttt{\textbf{$\_ \cap [ax]$}}. Figure \ref{fig:auto4} shows the result automata where transitions are encoded in hex-decimal, and the language of the NFA is the ASCII character set. This operation is costly since the intersection uses the cross-product automaton construction method, which requires converting NFA to DFA first and is quadratic in the number of states.
 
 \begin{figure}[htpb]
 
@@ -461,7 +459,7 @@ public:
 
 
 \subsection{NFA to DFA}\label{subsection:nfdtodfa}
-After generating the NFA in the previous step, it is made deterministic using \textit{Powerset Construction} algorithm. The algorithm can transform any NFA to an equivalent deterministic automaton. However, there is one disadvantage: When the algorithm is applied to an NFA with $n$ states the resulting DFA can have an exponentially larger number of states than $2^n$ \cite{dfasize}. To overcome this problem we set an adjustable limit for the number of states the DFA can have If the algorithm exceeds it we use a fallback library to handle this regular expression.
+After generating the NFA in the previous step, We use the \textit{Powerset Construction} algorithm to convert it into a DFA. The algorithm can transform any NFA into an equivalent deterministic automaton. However, there is one disadvantage: When the algorithm is applied to an NFA with $n$ states, the resulting DFA can have an exponentially larger number of states than $2^n$ \cite{dfasize}. We set an adjustable limit for the number of states the DFA can have to overcome this problem. We use a fallback library to handle this regular expression if the algorithm exceeds it.
 
 \subsubsection{Powerset Construction}
 The algorithm works by mapping associating each state in the DFA with a set of NFA states and it works as follows:
@@ -475,11 +473,10 @@ The algorithm works by mapping associating each state in the DFA with a set of N
 \end{enumerate}
  
 
-In our implementation we modify the classic algorithm as follows:
+In our implementation, we modify the classic algorithm as follows:
  \begin{itemize}
-     \item In NFA generation we remove explicit $\epsilon$-transitions we already get them in each NFA state transition table. So we can skip the parts about $\epsilon$-transitions.
-     \item Each transition we have is a range not a single character so the algorithm will not work when there are transitions with intersecting character ranges. To solve this we iterate all the transition ranges in the NFA and transform them to a sorted set of non-intersecting ranges.
-
+     \item In NFA generation, we remove explicit $\epsilon$-transitions as we already get them in each NFA state transition table as outlined in sub-section \ref{epsremoval}. So we can skip the parts about $\epsilon$-transitions.
+     \item Each transition we have is a range, not a single character, so the algorithm will not work when there are transitions with intersecting character ranges. To solve this, we iterate all the transition ranges in the NFA and transform them into a sorted set of non-intersecting ranges.
  \end{itemize}
  
 Figure \ref{fig:ps1} shows an example conversion NFA to DFA for pattern \texttt{\textbf{xyz|xya}}.
@@ -539,26 +536,27 @@ Figure \ref{fig:ps1} shows an example conversion NFA to DFA for pattern \texttt{
 \end{figure}
 
 \subsection{DFA Minimization}
-The objective of DFA minimization is to convert a given DFA into an equivalent DFA with the fewest possible states. There are two classes of states that can be removed or merged from the original DFA without affecting the language it accepts. Without changing the language it accepts the following types of states can be removed or combined from the original DFA:
+The objective of DFA minimization is to convert a given DFA into an equivalent DFA with the fewest possible states. Two classes of states can be removed or merged from the original DFA without affecting the language it accepts. Without changing the language, it accepts the following types of states that can be removed or combined from the original DFA:
+
 \begin{itemize}
-    \item \textbf{Dead states}: states from which no accept state is reachable. These states are removed.
-    \item  \textbf{Unreachable states}: are the states that are not reachable from DFA's start state for any input. These states are removed.
-    \item \textbf{Non-distinguishable states}: are those that cannot be distinguished from one another for any input. These states are merged.
+    \item \textbf{Dead states}: states from which no accept state is reachable. We can remove these states.
+    \item  \textbf{Unreachable states}: are the states that are not reachable from DFA's start state for any input. We can remove these states.
+    \item \textbf{Non-distinguishable states}: are those that are not distinguishable from one another for any input. We can merge these states.
 \end{itemize}
 
-Dead and Unreachable states are easily removed in $O(n + m)$ where $n$ is the number of states and $m$ is the number of transitions of the DFA. There are several algorithms that can be used to identify and merge non-distinguishable states e.g Hopcroft's algorithm \cite{Hopcroftalgo} with worst case time-complexity of $O(ns log(n))$ where $n$ is the number of states and $s$ is the size of the alphabet.
+Dead and Unreachable states are easily removed in $O(n + m)$ where $n$ is the number of states, and $m$ is the number of transitions of the DFA. Several algorithms can identify and merge non-distinguishable states, e.g, Hopcroft's algorithm \cite{Hopcroftalgo} with worst-case time complexity of $O(ns log(n))$ where $n$ is the number of states and $s$ is the size of the alphabet.
 
-In our implementation we apply the removal of dead and unreachable states but not the merging of non-distinguishable states due to its time complexity and in our experiments it didn't have much impact on the type of patterns we are interested in.
+In our implementation, we apply the removal of dead and unreachable states but not the merging of non-distinguishable states due to their time complexity. In our experiments, it did not have much impact on the type of patterns we focused on.
 
 \section{Code Generation}
-The last step after generating the minimal DFA is to translate it into efficient machine code. The \texttt{\textbf{CodeGen}} Module handles the conversion of the DFA to a more efficient representation and then Just-in-time (JIT) compiling the generated code which speed up regex matching at the cost of extra compilation time before matching.
+After generating the minimal DFA, the last step is to translate it into efficient machine code. The \texttt{\textbf{CodeGen}} Module handles the conversion of the DFA to a more efficient representation and then Just-in-time (JIT) compiling the generated code, which speeds up regex matching at the cost of extra compilation time before matching.
 
 Listing \ref{lst:dfainterpreted} shows simplified code for matching using interpreted DFA. The \texttt{\textbf{traverse}} function loops through the input string and for each character tries to find the transition table entry that matches. If it does not find a matching entry it stops and returns \texttt{\textbf{false}} otherwise it continues until it either encounters an accept state and returns \texttt{\textbf{true}} or the input is finished without a match and returns \texttt{\textbf{false}}.
 
-The problem with the interpreted code is
+The problem with the interpreted code is:
 \begin{enumerate}
-    \item It has lots of indirection and memory access for accessing the DFA state and transition table. This wastes 100s of CPU cycles \cite{cpumemgap}.
-    \item Data is not kept in CPU registers, and registers contents are evicted regularly.
+    \item It has lots of indirection and memory access for accessing the DFA state and transition table. Memory access wastes 100s of CPU cycles \cite{cpumemgap}.
+    \item Data is not kept in CPU registers, and their contents are evicted regularly.
 \end{enumerate}
 
 \begin{listing}[htbp]
@@ -573,18 +571,17 @@ The general algorithm for code generation and execution is as follows:
     \item The function consists of several code-blocks which are:
     \begin{enumerate}
         \item Entry block for the string iterator initialization.
-        \item A code-block for each DFA state that consists of first a bounds check if the input is finished in which case it returns \texttt{\textbf{false}} otherwise the next string character is loaded.
+        \item A code-block for each DFA state that consists of first a bound check if the input is finished, in which case it returns \texttt{\textbf{false}} otherwise the next string character is loaded.
         \item After that for each transition out of the state and \texttt{\textbf{if}} condition is generated that transfers the control flow to the next DFA state or returns \texttt{\textbf{true}} if the transition goes to an accept state.
     \end{enumerate}
-    \item If UTF-32 Encoding is enabled three helper functions are also added to code then loads the correct code-point from the input instead of a single character.
+    \item If UTF-32 Encoding is enabled, three helper functions are also added to the code, then loads the correct code point from the input instead of a single character.
     \item The generated code (LLVM IR) is passed to the JIT module that compiles it and then returns a function pointer to the traverse function. 
-    
 \end{enumerate}
 
 \subsubsection{C++ CodeGen}
-Listing \ref{lst:cppex} shows the C++ code generated for pattern \texttt{\textbf{[a-z][0-9]}}. The generated code unrolls the DFA matching loop and for each state, its transitions are also unrolled and can be treated as constant as well eliminating any memory access for the DFA, this representation in turn enables the compiler to eliminate a lot of indirection and dead code. In our implementation, we support C++ and LLVM IR code generation.
+Listing \ref{lst:cppex} shows the C++ code generated for pattern \texttt{\textbf{[a-z][0-9]}}. The generated code unrolls the DFA matching loop, and its transitions are also unrolled for each state. They can be treated as constant, eliminating any memory access for the DFA. This representation, in turn, enables the compiler to eliminate a lot of indirection and dead code. In our implementation, we support C++ and LLVM IR code generation.
 
-For C++ backend before the last step in the code-generation algorithm we use the LLVM \texttt{\textbf{clang}} compiler to emit Optimized LLVM IR before passing it to the JIT module that compiles it and returns a function pointer to the traverse function. 
+For the C++ backend, before the last step in the code-generation algorithm, we use the LLVM \texttt{\textbf{clang}} compiler to emit Optimized LLVM IR before passing it to the JIT module that compiles it and returns a function pointer to the traverse function. 
 
 \begin{listing}[htbp]
 \inputminted[breaklines,frame=lines,linenos]{cpp}{code/ex.cpp}
@@ -592,13 +589,13 @@ For C++ backend before the last step in the code-generation algorithm we use the
 \label{lst:cppex}
 \end{listing}
 
-Generating High Level code C++ code is easy to implement and debug but there are some disadvantages to this approach (1) The optimizing cpp compiler is slow compared to the LLVM Compiler. (2) Slow disk access is needed as the generated code must first be written to the disk since \texttt{\textbf{clang}} doesn't support compiling an in-memory string buffer. Therefore, The JIT Module has to read the LLVM IR from disk before being JITed which adds extra latency. For these reasons most of the code-generation work focused on the LLVM backend.
+Generating High-Level code C++ code is easy to implement and debug, but there are some disadvantages to this approach (1) The optimizing C++ compiler is slow compared to the LLVM Compiler. (2) Slow disk access is needed as the generated code must first be written to the disk since \texttt{\textbf{clang}} does not support compiling an in-memory string buffer. Therefore, The JIT Module has to read the LLVM IR from the disk before being JITed which adds extra latency. Most of the code-generation work focused on the LLVM backend for these reasons.
 
 
 \subsubsection{LLVM CodeGen}
-The \texttt{\textbf{CodeGen}} module generates code for the LLVM backend that is similar in structure to the code generated for C++ and follows the same general algorithm outlined above. However, it directly emits LLVM IR and thus faster to JIT and optimize. LLVM tool-chain provides an excellent C++ API \cite{llvmapi} to help generate and validate the IR.
+The \texttt{\textbf{CodeGen}} module generates code for the LLVM backend that is similar in structure to the code generated for C++ and follows the same general algorithm outlined above. However, it directly emits LLVM IR and is thus faster to JIT and optimize. LLVM tool-chain provides an excellent C++ API \cite{llvmapi} to help generate and validate the IR.
 
-Lets walk-through an example of how we go from a DFA representation to LLVM IR and how we also use the LLVM tool-chain to optimize the generated code and JIT the code. Figure \ref{fig:dfacodegenex} shows the DFA for pattern \texttt{\textbf{[a-z][0-9]}} that we will use an example. The DFA consists of three states and two transitions.
+Let us walk through an example of how we go from a DFA representation to LLVM IR and use the LLVM tool-chain to optimize the generated code and JIT the code. Figure \ref{fig:dfacodegenex} shows the DFA for pattern \texttt{\textbf{[a-z][0-9]}} that we will use an example. The DFA consists of three states and two transitions.
 
 \begin{figure}[H]
 \centering
@@ -616,19 +613,19 @@ Lets walk-through an example of how we go from a DFA representation to LLVM IR a
 \label{fig:dfacodegenex}
 \end{figure}
 
-Table \ref{tab:llvminst} lists the LLVM IR instructions and their meaning needed to understand the code generated. Listing \ref{lst:llvmex} shows the complete code generated for the pattern. Lines 1 defines the \texttt{\textbf{traverse}} function and its parameters an unsigned char pointer which is the input text and the length of the input text.
+Table \ref{tab:llvminst} lists the LLVM IR instructions and their meaning needed to understand the code generated. Listing \ref{lst:llvmex} shows the complete code generated for the pattern. Lines 1 defines the \texttt{\textbf{traverse}} function and its parameters, an unsigned char pointer which is the input text and the length of the input text.
 
-Lines (2-5) describe the entry block in which the \texttt{\textbf{idx}} variable used to traverse the input text is defined and initialized to zero. After that an unconditional jump to initial state to start the matching process.
+Lines (2-5) describe the entry block in which the \texttt{\textbf{idx}} variable used to traverse the input text is defined and initialized to zero. After that, an unconditional jump to the initial state starts the matching process.
 
-Lines (6-8) define the initial state block and the we do a bounds check if the current $idx >= n$. Line 9 is a conditional jump based on the result of the comparison before if the comparison is true it means the input is finished without a match in which case we go to \texttt{\textbf{bounds\_then}} block and return \texttt{\textbf{false}}.
+Lines (6-8) define the initial state block, and we do bounds check if the current $idx >= n$. Line 9 is a conditional jump based on the comparison result before. If the comparison is true, it means the input is finished without a match, in which case we go to \texttt{\textbf{bounds\_then}} block and return \texttt{\textbf{false}}.
 
 If the bounds check is \texttt{\textbf{false}}, we jump to block \texttt{\textbf{bonds\_cont}} Lines (12-20) where we first load the next character from the input text, increment the idx variable and then check the value of the character if it is in the range $[a - z]$. If the comparison succeeds we jump to the next state block \texttt{\textbf{s5}}. Otherwise, we jump to the block \texttt{\textbf{s4\_nt}} and return \texttt{\textbf{false}} as no match is found.
 
-Lines (23-41) repeat the same process but for the second state and the check is for the range $[0-9]$. The only difference is after matching that range we jump to block \texttt{\textbf{s7}} that returns \texttt{\textbf{true}} and indicating a match is found. Figure \ref{fig:annocfg} shows an annotated Control Flow Graph (CFG) of the generated code.
+Lines (23-41) repeat the same process but for the second state, and the check is for the range $[0-9]$. The only difference is after matching that range we jump to block \texttt{\textbf{s7}} that returns \texttt{\textbf{true}} and indicating a match is found. Figure \ref{fig:annocfg} shows an annotated Control Flow Graph (CFG) of the generated code.
 
-The next step after generating the LLVM IR, The LLVM optimizer is used to validate and optimize the IR. The number and type of optimization passes applied are configurable via the optimization level configuration option.
+In the next step, after generating the LLVM IR, The LLVM optimizer is used to validate and optimize the IR. The number and type of optimization passes applied are configurable via the optimization level configuration option.
 
-The LLVM code generator uses this optimization level to determine which optimization passes it should apply during the generation of the machine code. Each optimization level applies different optimizations to the code to aim either for speed or size of the code. Table \ref{tab:optlevels} shows the default optimization levels shipped with LLVM. By default we apply the \textbf{-O2} optimization level which is a moderate level of optimization that enables most optimizations.
+The LLVM code generator uses this optimization level to determine which optimization passes it should apply during the machine code generation. Each optimization level applies different optimizations that focus on either code size reduction or increased code performance. Table \ref{tab:optlevels} shows the default optimization levels shipped with LLVM. By default, we apply the \textbf{-O2} optimization level, which is a moderate level of optimization that enables most optimizations.
 
 {\renewcommand{\arraystretch}{1.1}% for the vertical padding
 \begin{table}[H]
@@ -654,10 +651,9 @@ Level        & Description  \\
 \caption[LLVM Optimization Levels]{LLVM Optimization Levels.}\label{tab:optlevels}
 \end{table}}
 
-Applying the LLVM optimizer with Level \textbf{-O2} to the code generated yields the LLVM IR in Listing \ref{lst:llvmexs}. We notice the code size was halved from 42 to 21 lines of code. The number of code blocks was also halved and common blocks were merged into the \texttt{\textbf{common.ret}} block. This demonstrates how powerful is the LLVM optimizing compiler.
+Applying the LLVM optimizer with Level \textbf{-O2} to the code generated yields the LLVM IR in Listing \ref{lst:llvmexs}. We notice the code size was halved from 42 to 21 lines. The number of code blocks was also halved, and common blocks were merged into the \texttt{\textbf{common.ret}} block. These results demonstrate how powerful is the LLVM optimizing compiler.
 
-The last step after the optimization is passing the optimized IR to the JIT compiler that compiles it and
-then returns a function pointer to the traverse function that is used for matching.
+The last step after the optimization is passing the optimized IR to the JIT compiler that compiles it and then returning a function pointer to the traverse function used for matching.
 
 {\renewcommand{\arraystretch}{1.5}% for the vertical padding
 \begin{table}[H]
@@ -723,33 +719,33 @@ Returns a boolean value or a vector of boolean values based on comparison of its
 \end{listing}
 
 \section{Unicode}
-Unicode is a standard that was created specifically to encode all of the characters in all of the world's writing systems. All modern database engines support Unicode characters and users expect some kind Unicode support. Therefore, The addition of basic Unicode support to our prototype is a must-have feature. Also since Unicode is a large character set adding Unicode support helps in testing how well our prototype scales as regular expression engines that are only adapted to handle small character sets will typically not scale well.
+Unicode is a standard that the Unicode Consortium created specifically to encode all of the characters in all of the world's writing systems. All modern database engines support Unicode characters, and users expect some kind of Unicode support. Therefore, The addition of basic Unicode support to our prototype is a must-have feature. Also, since Unicode is an extensive character set, adding Unicode support helps test how well our prototype scales. Regular expression engines that are only adapted to handle small character sets, e.g., ASCII, will typically not scale well.
 
 The Unicode Consortium has published guidelines \cite{unicodeguideline} on how regular expression engines can support Unicode. The guidelines specify three levels of Unicode support: Basic, Extended and Tailored.
 
-Unicode level 1 support (Basic Unicode Support) defines the guidelines for minimal level for useful Unicode support. The results of regular expression matching at this level are not country or language dependent. To accomplish full Unicode processing at this level, the user of the regular expression engine would need to define more complicated regular expressions. To claim conformance with the first level of support a regular expression engine must support:
+Unicode level 1 support (Basic Unicode Support) defines the guidelines for minimal level for useful Unicode support. The results of regular expression matching at this level are not country or language dependent. To accomplish complete Unicode processing at this level, the user of the regular expression engine would need to define more complicated regular expressions. A regular expression engine claiming conformance with Unicode level one must support:
 
 \begin{enumerate}
-    \item \textbf{Hex Notation}: An implementation must provide a means for expressing any Unicode code point (from U+0000 to U+10FFFF) using the hexadecimal code point encoding to meet this criteria.
-    \item \textbf{Properties}: Unicode properties provide a convenient way to construct character classes of groups of code points specified by Unicode. E.g. Unicode general category property that allows the user to express a category in a regular expression, such as "upper case letter" which encompasses all characters categorized as upper case letters in all of the world's writing systems.
+    \item \textbf{Hex Notation}: An implementation must provide a means for expressing any Unicode code point (from U+0000 to U+10FFFF) using the hexadecimal code point encoding to meet these criteria.
+    \item \textbf{Properties}: Unicode properties provide a convenient way to construct character classes of groups of code points specified by Unicode. E.g., Unicode general category property allows the user to express a category in a regular expression, such as "upper case letter" which encompasses all characters categorized as upper case letters in all of the world's writing systems.
     \item \textbf{Subtraction and Intersection}: An implementation must provide mechanisms for the union, intersection, and set-difference of sets of characters within regular expression character class expressions.
-    \item \textbf{Simple Word Boundaries}: An engine supporting the test for word boundaries e.g the pattern \textbf{\textbackslash b} must be extended to include characters with the alphabetic property, characters from the Unicode decimal general category, zero width joiners, or zero width non-joiners.
-    \item \textbf{Simple Loose Matches}: An engine supporting case-less matching must be extended to include at the very least the simple, default Unicode case-insensitive matching. Also if it supports case conversions, then it shall provide at least the simple, default Unicode case folding.
-    \item \textbf{Line Boundaries}: A regular expression engine that supports line boundaries must support CRLF, LF, CR, NEL (U+0085), PARAGRAPH SEPARATOR (U+2029) and LINE SEPARATOR (U+2028).
-    \item \textbf{Code Points}: A key requirement is that Unicode text be semantically interpreted by code point rather than code unit.
+    \item \textbf{Simple Word Boundaries}: An engine supporting the test for word boundaries, e.g., the pattern \textbf{\textbackslash b} must be extended to include characters with the alphabetic property, characters from the Unicode decimal general category, zero-width joiners, or zero-width non-joiners.
+    \item \textbf{Simple Loose Matches}: An engine supporting case-less matching must be extended to include at the very least the simple, default Unicode case-insensitive matching. Also, if it supports case conversions, it shall provide at least the simple, default Unicode case folding.
+    \item \textbf{Line Boundaries}: A regular expression engine that supports line boundaries must support CRLF, LF, CR, NEL (U+0085), PARAGRAPH SEPARATOR (U+2029), and LINE SEPARATOR (U+2028).
+    \item \textbf{Code Points}: An essential requirement is that Unicode text is semantically interpreted by code point rather than code unit.
 \end{enumerate}
 
-Unicode level 2 support for regular expression engines is referred to as Unicode extended support. The criteria for Unicode level 2 support are requirements put in place to meet user expectations for Unicode character sequences. The major needs for this level of support are support for canonical equivalence, extended grapheme clusters, and improved word boundary detection.
+Unicode level 2 support for regular expression engines is referred to as Unicode extended support. The criteria for Unicode level 2 support are requirements to meet user expectations for Unicode character sequences. The primary needs for this level of support are support for canonical equivalence, extended grapheme clusters, and improved word boundary detection.
 
-Unicode level 3 defines the specifications for tailored regular expression support. A regular expression engine can be tailored for a given area and utilized by specific groups of end users.
+Unicode level 3 defines the specifications for tailored regular expression support. A regular expression engine can be tailored for a given area and utilized by specific groups of end-users.
 
-In our prototype, We did not aim for a complete Unicode Level 1 support due to time constraints. We implemented only requirement seven \textbf{Code Points} that is that the Unicode text is interpreted semantically by code point, not code units. Adding support for requirements (1-3) is an easy task and would require mostly changes to the parser grammar. There is little to no support for either Level 2 or Level 3. Most of this is due to the features being either complex/difficult to develop or, at the very least, extremely difficult to implement without losing performance.
+Our prototype did not aim for a complete Unicode Level 1 support due to time constraints. We implemented only requirement seven \textbf{Code Points} that is that the Unicode text is interpreted semantically by code points, not code units. Adding support for requirements (1-3) is an easy task and would primarily require parser grammar changes. There is little to no support for either Level 2 or Level 3. Most of this is due to the features being either complex/challenging to develop or, at the very least, extremely difficult to implement without losing performance.
 
 In our prototype, We support two modes Unicode modes for matching: UTF-8 and UTF-32. We assume for both modes that both the pattern and input string are UTF-8 encoded (which includes ASCII).
 
 \subsection{UTF-32}
-We implemented this as the first step towards handling Unicode in our prototype. 
-In the UTF-32 mode the DFA generated matches full code-points and the logic for character decoding is handled outside the DFA by helper methods, effectively making the alphabet of the DFA is the full Unicode range \texttt{\textbf{0x000000-0x1FFFFF}}. Figure \ref{fig:utf32exdfa} shows the an example DFA to match the sterling character \texttt{\textsterling}.
+We implemented this as the first step toward handling Unicode in our prototype. 
+In the UTF-32 mode, the DFA generated matches full code points, and the logic for character decoding is handled outside the DFA by helper methods, effectively making the alphabet of the DFA the full Unicode range \texttt{\textbf{0x000000-0x1FFFFF}}. Figure \ref{fig:utf32exdfa} shows the an example DFA to match the sterling character \texttt{\textsterling}.
 
 \begin{figure}[H]
 \centering
@@ -762,14 +758,13 @@ In the UTF-32 mode the DFA generated matches full code-points and the logic for 
   \path    (s0) edge                          node {$0x000000A3$} (s1);
 
 \end{tikzpicture}
-\caption{DFA to recognize pattern \texttt{\textsterling}.}
+\caption[DFA to recognize pattern \texttt{\textsterling}]{DFA to recognize pattern \texttt{\textsterling}. The transition contains the code point of the character.}
 \label{fig:utf32exdfa}
 \end{figure}
 
-\noindent To handle the character decoding a new function \texttt{\textbf{nextByte}} is added in the  code generation step as shown in Listing \ref{lst:utf32nextbyte}. In this function the UTF-8 string is passed and the number of bytes of the code-point are determined then using the other helper function \texttt{\textbf{readMultiByte}} the complete codepoint is read and returned and we can continue the dfa matching in line \texttt{\textbf{18}}.
+To handle the character decoding a new function \texttt{\textbf{nextByte}} is added in the  code generation step as shown in Listing \ref{lst:utf32nextbyte}. In this function the UTF-8 string is passed and the number of bytes of the code-point are determined then using the other helper function \texttt{\textbf{readMultiByte}} the complete code point is read and returned and we can continue the DFA matching in line \texttt{\textbf{18}}.
 
-While UTF-32 is easy to implement and makes the DFA generation step easier and the smaller, it is space inefficient since in DFA generation we have to store each transition as 32-bit Integer and the repeated function calls and logic for UTF-8 decoding then UTF-32 encoding is costly and impacts the performance. 
-
+While UTF-32 is easy to implement and makes the DFA generation step easier and the smaller, it is space inefficient since, in DFA generation, we have to store each transition as a 32-bit Integer, and the repeated function calls and logic for UTF-8 decoding, then UTF-32 encoding is costly and impacts the performance.
 \begin{listing}[htbp]
 \inputminted[breaklines=true,frame=lines,linenos]{cpp}{code/utf32.cpp}
 \caption[Code generated for handling Recognizing UTF-32 pattern]{Code generated for handling Recognizing UTF-32 pattern.}
@@ -777,7 +772,9 @@ While UTF-32 is easy to implement and makes the DFA generation step easier and t
 \end{listing}
 
 \subsection{UTF-8}
-The default mode of operation for the engine. To support UTF-8 the engine embeds the UTF-8 decoding inside the DFA. In this mode the engine treats the input pattern is a valid UTF-8 encoded string. The DFA generation module generates a Byte DFA that is the alphabet of the DFA is $[0x0 - 0xFF]$ and to recognize a code-point the number of UTF-8 bytes to represent it are determined and then code-point is then split into a sequence of valid UTF-8 bytes.
+UTF-8 is the default encoding of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism inside the DFA. The engine treats the RegExp as a sequence of valid UTF-8 bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
+
+For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit nine followed by a space character then a sterling pound character which corresponds to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020\textbackslash u00A3}}. The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit.Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
 
 \begin{figure}[htbp]
 \centering
@@ -802,11 +799,10 @@ The default mode of operation for the engine. To support UTF-8 the engine embeds
 \label{fig:utf8exdfa}
 \end{figure}
 
-\noindent For example to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit 9 followed by a space character then a sterling pound character which correspond to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020\textbackslash u00A3}}. The engine first determines that it needs 1 byte for the first two code-points and two bytes for the sterling character. Figure \ref{fig:utf8exdfa} shows the resulting DFA.
 
 \subsubsection{Byte Ranges Transformation}
 
-Generating byte DFA with with embedded UTF-8 decoding raises an issue with converting Unicode code-points to UTF-8 byte ranges. To demonstrate the issue lets say we want to match any Cyrillic character we can do so with the following pattern \texttt{\textbf{[\textbackslash u0400-\textbackslash u04FF]}}.  The set of allowed bytes for this range can be expressed as a sequence of byte ranges: $\langle0xD0-0xD3\rangle \langle0x80-0xBF\rangle$. We can achieve this by simply encoding the boundaries \texttt{\textbf{\textbackslash u0400}} is encoded as $\langle0xD0 \; 0x80\rangle$ and \texttt{\textbf{\textbackslash u04FF}} is encoded as $\langle0xD3 \; 0xBF\rangle$ then we can create ranges from each corresponding pair of bytes: $D0 \rightarrow 0xD3$ and $0xD3 \rightarrow 0xBF$.
+Generating byte DFA with embedded UTF-8 decoding raises issues with converting Unicode code-points to UTF-8 byte ranges. To demonstrate the issue, let us say we want to match any Cyrillic character; we can do so with the following pattern \texttt{\textbf{[\textbackslash u0400-\textbackslash u04FF]}}. The set of allowed bytes for this range can be expressed as a sequence of byte ranges: $\langle0xD0-0xD3\rangle \langle0x80-0xBF\rangle$. We can achieve this by simply encoding the boundaries \texttt{\textbf{\textbackslash u0400}} is encoded as $\langle0xD0 \; 0x80\rangle$ and \texttt{\textbf{\textbackslash u04FF}} is encoded as $\langle0xD3 \; 0xBF\rangle$ then we can create ranges from each corresponding pair of bytes: $D0 \rightarrow 0xD3$ and $0xD3 \rightarrow 0xBF$.
 
 Now lets try to extend the range to include Cyrillic Supplementary characters to the range. The pattern becomes \texttt{\textbf{[\textbackslash u0400-\textbackslash u052F]}}. Applying the same algorithm above \texttt{\textbf{[\textbackslash u052F}} is encoded as $\langle0xD4 \; 0xAF\rangle$ and we get the following sequence of byte ranges: $\langle0xD0-0xD4\rangle \langle0x80-0xAF\rangle$. However, this range is not correct because this range doesn't capture many characters, for example, \texttt{\textbf{\textbackslash u04FF}} as its last byte, $0xBF$ isn't in the range $\langle0x80-0xAF\rangle$. Instead we would need two sequences of byte ranges:
 
@@ -874,14 +870,13 @@ $\langle0xEE-0xEF\rangle \langle0x80-0xBF\rangle \langle0x80-0xBF\rangle$
 \end{figure}
 
 \section{Literal Optimizations}\label{section:simdopt}
-Searching for a pattern that consists only of string literals e.g \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm for them. On modern CPUs, the key to optimize the search for literals is how fast we can identify a candidate for a match. That is the reason we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration which makes it very fast.  
+Searching for a pattern that consists only of string literals e.g \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
 
-In our implementation we detect these simple literal patterns e.g \texttt{\textbf{.*foobar.*}} and apply one of the two algorithms explained below based on the size of the pattern.
+In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{.*foobar.*}} and apply one of the two algorithms explained below based on the size of the pattern.
 
 \subsection{EPSM Algorithm}
-Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. To compare text chunks with the pattern, shift and bitwise-and operations are performed. The algorithm is based on four different search procedures that are applied based on the pattern length. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n ∗ m)$.
+Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n ∗ m)$.
 
-%  The main idea of the EPSMa algorithm is marking the positions of the pattern’s symbols on the investigated text chunk. 
 The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m_i = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithms pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
 
 For the searching phase we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
@@ -924,11 +919,10 @@ r = mm_movemask_epi8(h)
 The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ characters. Therefore, Lets define  $N = \frac{n}{\alpha} - 1$ and the string $t$ of length $n$ as $T=T_0 T_1...T_N$. The instruction \texttt{\textbf{wscmp}} compares a block of the text $T_i$ is with the strings in the pre-processing array $B$. Let $s_j = wscmp(T_i, B_j) = b_0 b_1 ...b_{\alpha-1}$ for $0 \leq j < m'$ and $b_k = 1$ if and only if $T_{ik} = p_j$ for $0 \leq k < \alpha$. Lets also define $r = r_0 r_1...r_{m'-1}$ where $r_i = (s_i << i)$. It is apparent that the prefix of length $m'$ of the pattern $p$
 occurs at the beginning at position $j$ of $T_i$ if and only if $r_j = 1$. If $m = m'$ then the whole pattern occurs and we can report the occurrences of the pattern at positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$. Otherwise, we know that at the same positions the prefix of the pattern matches and the algorithm checks the occurrences beginning at those positions. At the end, the algorithm naively checks the $m' - 1$ possible occurrences crossing the blocks $T_i$ and $T_i+1$ are naively checked by the algorithm.
 
-The worst-case time complexity of the algorithm is $O(nm)$ as a naive check could be required for each position of the  However, for small patterns the algorithms has a $O(n+occ)$ time complexity, where $occ$ is the number of occurrences of
-the pattern $p$ in the text $t$.
+The worst-case time complexity of the algorithm is $O(nm)$ as a naive check could be required for each position of the  However, for small patterns, the algorithm has a $O(n+occ)$ time complexity, where $occ$ is the number of occurrences of the pattern $p$ in the text $t$.
 
 \subsection{Generic SIMD Algorithm}
-This Generic SIMD algorithm \cite{simdalgo} is slower than EPSMa algorithm but in applicable to patterns of any size. The main idea of this algorithm is using equality of the pattern's initial and last characters as a predicate for a potential match. The two characters (first and last) of the pattern are copied in two SIMD registers, $R1$ and $R2$ respectively. Then in each iteration of the algorithm, two chunks of strings are loaded into two other SIMD registers. The first chunk $C1$ is read from offset $i$ and the second chunk $C2$ is read from offset $i + k - 1$, where $k$ is the pattern length. Then the algorithm computes a vector expression $M1 = (R1 = C1)$ and $M2 = (R2 = C2)$ then $M = (M1 \& M2)$ that yields a bit mask where a set bit in the mask signals a position of potential match. At last, only at these positions an exact comparisons of the pattern and the text are performed.
+This Generic SIMD algorithm \cite{simdalgo} is slower than the EPSMa algorithm but applies to patterns of any size. This algorithm's main idea is to use the equality of the pattern's initial and last characters as a predicate for a potential match. The pattern's two characters (first and last) are copied in two SIMD registers, $R1$ and $R2$, respectively. Then in each iteration of the algorithm, two chunks of strings are loaded into two other SIMD registers. The first chunk $C1$ is read from offset $i$ and the second chunk $C2$ is read from offset $i + k - 1$, where $k$ is the pattern length. Then the algorithm computes a vector expression $M1 = (R1 = C1)$ and $M2 = (R2 = C2)$ then $M = (M1 \& M2)$ that yields a bit mask where a set bit in the mask signals a position of potential match. At last, only at these positions exact comparisons of the pattern and the text are performed.
 
 Figure \ref{fig:simdmatchalgo} shows an example application of the algorithm for pattern $p$ \textbf{foo} and text $t$ \textbf{hellofoo}. The algorithm returns a potential match at position $5$ in the pattern and a \texttt{memcmp} check is performed at this position.
 
