@@ -3,7 +3,7 @@ This thesis presented our prototype implementation of a performant automata-base
 
 Our implementation aims to handle RegExps matching (as a sub-engine) inside a DBMS. It aims to deliver high performance on commonly used regular expressions while acknowledging that not all RegExps can be handled by the underlying algorithm, which also has significant memory and compilation time requirements.
 
-Performance evaluations of the prototype to other popular general-purpose regular expression engines show promising results. On a dataset with millions of rows and medium-sized patterns, we achieved a speedup of $2.5x$ against PCRE2 and $1.2x$ against RE2. These results show how adding JIT compilation is beneficial over large datasets, and a large number of runs amortizes the cost of compilation.
+Performance evaluations of the prototype to other popular general-purpose regular expression engines show promising results. On a dataset with 32 million rows, we achieved up to $2.7x$ speedup against PCRE2 and up to $1.8x$ speedup against RE2. These results show how adding code-generation and compilation is beneficial over large datasets, and a large number of runs amortizes the cost of compilation.
 
 \section{Future Work}\label{futurework}
 
