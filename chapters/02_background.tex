@@ -212,8 +212,8 @@ A program is said to be in Static Single Assignment (SSA) \cite{ssa} form if and
 
 \noindent The conversion of ordinary program code into SSA form follows two rules:
 \begin{enumerate}
-    \item The compiler replaces any assignment to an already-assigned variable with a brand new “version” of that variable e.g variable \texttt{\textbf{$x$}} becomes \texttt{\textbf{$x_1$}}
-    \item The compiler uses Phi function ($\phi$) to introduce a new variable when it needs to choose a variable based on control flow.
+    \item The compiler replaces any assignment to an already-assigned variable with a brand new “version” of that variable e.g variable \texttt{\textbf{$x$}} becomes \texttt{\textbf{$x_1$}}.
+    \item The compiler uses Phi function ($\phi$) to introduce a new variable when it needs to use a variable based on control flow outcome.
 \end{enumerate}
 
 Listing \ref{lst:cfgcode} shows an example code snippet of a program that is not in SSA form for the variables $a, b, c$.
@@ -243,7 +243,7 @@ The code in Listing \ref{lst:cfgcode} can be represented as a Control Flow Graph
 \centering
 \usetikzlibrary{shapes,calc}
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm,scale = 1,transform shape]
-  \node[bignode] (b0) {$a = 3;$\\$a = a - 1;$\\$(a > 0)$};
+  \node[bignode] (b0) {$a = 3;$\\$a = a - 1;$\\$(a > 0)?$};
   \node[bignode] (b1) [below left of=b0]{$b = a * 2;$\\$c = b;$};
   \node[bignode] (b2) [below right of=b0]{$b = a - 1;$};
   \node[bignode] (b3) [below right of=b1] {$c = a - b;$\\$d = a + b;$};
