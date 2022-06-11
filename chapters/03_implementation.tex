@@ -28,6 +28,7 @@ AsciiEncoding & If true disables UTF-8 handling in the generated code & false \\
 
 The engine validates the pattern, parses it, and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set, which we describe in detail in Section \ref{section:simdopt}.
 
+%TODO:: minimal dfa <-> regex dfa, + reparaphrase this again maybe at dfa generator? 
 If the pattern simplicity check fails, the DFA generator traverses the parse tree and produces a minimal DFA that can recognize the regular expression. The \textit{Codegen} module converts the DFA to efficient LLVM IR after that. The LLVM JIT Compiler compiles the IR and returns a function pointer for matching the compiled pattern against the input file.
 
 \begin{figure}[htpb]
@@ -48,8 +49,9 @@ Initially, we developed a hand-written parser for regular expressions recognitio
 
 We experimented with many parser generators \textit{(f)lex, yacc, bison, and ANTLR}. In the end, we decided to use ANTLR (ANother Tool for Language Recognition) for the following reasons:
 
+%TODO: maybe talk about bnf vs ebnf
 \begin{packed_enum}
-    \item ANTLR allows and encourages the separation between the definition of the language from the code that handles the results, While Flex and Bison support only a grammar that contains actions that result in an ugly, monolithic and unreadable code.
+    \item ANTLR allows and encourages the separation between the definition of the grammar from the code that executes actions on the parse tree, While Flex and Bison support only a grammar that contains actions that result in an ugly, monolithic and unreadable code.
     \item ANTLR supports writing the grammar in EBNF (Extended Backus–Naur Form), making it easier to represent the grammar, While Bison only supports BNF.
     \item ANTLR supports all Unicode flavors, While (f)lex does not even support Unicode.
 \end{packed_enum}
@@ -188,9 +190,9 @@ class FiniteAutomatonTransition {
     auto fa = std::make_unique<FiniteAutomaton>(s0);
     
     // add transitions s0->s1 and s1->s2
-    s0.transitions.emplace(('a', /*min*/, 'c' /*max*/, s1);
+    s0.transitions.emplace(('a' /*min*/, 'c' /*max*/, s1);
     // min = max since transition with single char
-    s1.transitions.emplace('d', 'd', s2);
+    s1.transitions.emplace('d' /*min*/, 'd' /*max*/, s2);
     
     s2.accept = true; // s2 is final state
     fa.deterministic = true; // since it is a DFA
@@ -572,7 +574,7 @@ The general algorithm for code generation and execution is as follows:
     \begin{enumerate}
         \item Entry block for the string iterator initialization.
         \item A code-block for each DFA state that consists of first a bound check if the input is finished, in which case it returns \texttt{\textbf{false}} otherwise the next string character is loaded.
-        \item After that for each transition out of the state and \texttt{\textbf{if}} condition is generated that transfers the control flow to the next DFA state or returns \texttt{\textbf{true}} if the transition goes to an accept state.
+        \item After that for each transition out of the state an \texttt{\textbf{if}} condition is generated that transfers the control flow to the next DFA state or returns \texttt{\textbf{true}} if the transition goes to an accept state.
     \end{enumerate}
     \item If UTF-32 Encoding is enabled, three helper functions are also added to the code, then loads the correct code point from the input instead of a single character.
     \item The generated code (LLVM IR) is passed to the JIT module that compiles it and then returns a function pointer to the traverse function. 
