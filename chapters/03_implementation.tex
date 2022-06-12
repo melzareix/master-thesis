@@ -26,22 +26,48 @@ AsciiEncoding & If true disables UTF-8 handling in the generated code & false \\
 \caption[CLI Configuration Options]{CLI Configuration Options.}\label{tab:cliconf}
 \end{table}}
 
-The engine validates the pattern, parses it, and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set, which we describe in detail in Section \ref{section:simdopt}.
+The engine validates the pattern, parses it, and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set to provide a faster way to match simple literals. We describe the SIMD matcher in detail in Section \ref{section:simdopt}.
 
-%TODO:: minimal dfa <-> regex dfa, + reparaphrase this again maybe at dfa generator? 
-If the pattern simplicity check fails, the DFA generator traverses the parse tree and produces a minimal DFA that can recognize the regular expression. The \textit{Codegen} module converts the DFA to efficient LLVM IR after that. The LLVM JIT Compiler compiles the IR and returns a function pointer for matching the compiled pattern against the input file.
+If the pattern simplicity check fails, the DFA generator traverses the parse tree and produces a minimal DFA that can recognize the regular expression. The \texttt{\textbf{CodeGen}} module converts the DFA to efficient LLVM IR after that. The LLVM JIT Compiler compiles the IR and returns a function pointer for matching the compiled pattern against the input file.
 
-\begin{figure}[htpb]
-\centering
-\includegraphics[width=0.65\textwidth]{imgs/sa-ext2.png}
-\caption[System Architecture]{High Level System Architecture.}\label{fig:sa}
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1.1cm, scale = 1,transform shape]
+        \node (start) [io] {Regular Expression};
+        \node (parser) [process, below=of start] {Parser};
+        \node (dfa) [process, below=of parser] {DFA Generator};
+        \node (dec1) [decision, below=of dfa, align=left] {Simple\\pattern?};
+        \node (simd) [process, right=of dec1] {SIMD Matcher};
+        \node (codegen) [process, below=of dec1] {CPP/LLVM Codegen};
+        \node (jit) [process, below=of codegen] {LLVM JIT Compiler};
+        \node (cmp) [process2, below=of jit, align=left] {Compiled Regex\\Matcher Function};
+        \node (res) [startstop, below=of cmp] {Matching Results};
+        
+        \node (inpf) [io, right=of cmp] {Input File};
+        \node (config) [io, left=of dec1] {Engine Config};
+        
+    \draw [arrow] (start) -- node[anchor=east] {} (parser);
+    \draw [arrow] (parser) -- node[anchor=center,fill=white] {Parse tree} (dfa);
+    \draw [arrow] (dfa) -- node[] {} (dec1);
+    \draw [arrow] (dec1) -- node[anchor=center,fill=white] {yes} (simd);
+    \draw [arrow] (dec1) -- node[anchor=center,fill=white] {no} (codegen);
+    \draw [arrow] (codegen) -- node[anchor=center,fill=white] {LLVM IR} (jit);
+    \draw [arrow] (jit) -- node[anchor=center] {} (cmp);
+    \draw [arrow] (cmp) -- node[anchor=center] {} (res);
+    \draw [arrow] (inpf) -- node[] {} (cmp);
+
+    \draw [arrow] (config) -- node[] {} (dfa);
+    \draw [arrow] (config) -- node[] {} (codegen);
+    
+    \end{tikzpicture}
+    \caption{High Level System Architecture.}
+    \label{fig:sa}
 \end{figure}
 
-
-% \begin{figure}[ht]
+% \begin{figure}[H]
 % \centering
-% \includegraphics{imgs/sa3.png}
-% \caption[C++ Code Generator]{C++ Code Generator.}\label{fig:sa3}
+% \includegraphics[width=0.5\textwidth]{imgs/sa-ext2.png}
+% \caption[System Architecture]{.}\label{fig:sa}
 % \end{figure}
 
 \section{Parser}\label{section:parser}
@@ -52,40 +78,36 @@ We experimented with many parser generators \textit{(f)lex, yacc, bison, and ANT
 %TODO: maybe talk about bnf vs ebnf
 \begin{packed_enum}
     \item ANTLR allows and encourages the separation between the definition of the grammar from the code that executes actions on the parse tree, While Flex and Bison support only a grammar that contains actions that result in an ugly, monolithic and unreadable code.
-    \item ANTLR supports writing the grammar in EBNF (Extended Backus–Naur Form), making it easier to represent the grammar, While Bison only supports BNF.
+    \item ANTLR supports writing the grammar in EBNF (Extended Backus–Naur Form), making it easier to represent the grammar, While Bison only supports BNF. ENBF adds a collection of extensions to Backus-Naur form, e.g., repetition, grouping and conditional rules.
+
     \item ANTLR supports all Unicode flavors, While (f)lex does not even support Unicode.
 \end{packed_enum}
 
-\noindent ANTLR consists of two parts (1) a translator from the grammar to a lexer and parser in the target language (in our case C++) (2) a run-time library needed by the generated lexer and parser.
+\noindent ANTLR consists of two parts (1) a translator from the grammar to a lexer and parser in the target language (in our case C++) (2) a run-time library that contains common code used by the generated lexer and parser.
 
-Since the engine is targeted for use inside a RDBMS, we use a SQL compliant grammar based on the grammar from Firebird Database \cite{2022Firebird}. Figure \ref{fig:zregexgrammar} shows the grammar used for the parser (Lexer rules emitted for clarity) in EBNF format. The grammar shows the elements and rules for building regular expressions, which are:
+Since the engine is targeted for use inside a RDBMS, we use a SQL compliant grammar based on the grammar from Firebird Database \cite{2022Firebird}. Figure \ref{fig:zregexgrammar} shows the grammar used for the parser (Lexer rules emitted for clarity) in EBNF format. 
 
-\begin{figure}[htbp]
+The grammar shows the elements and rules for building regular expressions, which are:
+
+\begin{figure}[H]
 \begin{minted}[breaklines=true,frame=lines,linenos]{antlr}
+regex: alternation EOF;
 alternation: expression ('|' expression)*;
-
 expression: element*;
 element: atom quantifier?;
-
 quantifier: '*' | '+' | '?' | '{' number (',' (number)?)? '}';
 number: INT+;
-
 atom: character | characterClass | Wildcard | '(' alternation ')';
 character: regularCharacter | EscapeChar specialChar;
-
-characterClass: '_' | '[' classMember+ ']' | '[^' classMember+ ']'
-
+characterClass: '_' | '[' classMember+ ']' | '[^' classMember+ ']';
 classMember: character | range | predefinedClass;
 range: character '-' character;
-
 predefinedClass: '[:' predefinedClassName ':]';
 predefinedClassName: 'ALPHA'| 'UPPER'| 'LOWER'| 'DIGIT'| 'ALNUM'| 'SPACE'| 'WHITESPACE';
-
 regularCharacter: UnicodeLetter | INT;
 specialChar: '*' |  '+' |  Newline |  '?' |  '[' |  ']' |  '{' |  '}' |  '^' |  '-' |  '_' |  '|' |  '( |' |  ')' |  '%' |  '\\';
-
 \end{minted}
-\caption[Parser Grammar]{Regex SQL Grammar \cite{2022Firebird}}\label{fig:zregexgrammar}
+\caption[Parser Grammar]{Regex SQL Grammar \cite{2022Firebird}.}\label{fig:zregexgrammar}
 \end{figure}
 
 \begin{itemize}
@@ -134,73 +156,70 @@ specialChar: '*' |  '+' |  Newline |  '?' |  '[' |  ']' |  '{' |  '}' |  '^' |  
 \item \textbf{Alternations}: The meta-character \textbf{|} defines an alternation which introduces branches to the pattern e.g \textbf{[foo|bar]} matches either \textit{foo} or \textit{bar}.
 \end{itemize}
 
-% Modern Regular expression engines define some extra features which we currently don\'t support:
-% \begin{itemize}
-%     \item \textbf{Back-references}: 
-% \end{itemize}
 \section{DFA Generator}
-The parser produces a parse tree that is passed to the DFA Generator module shown in Figure \ref{fig:sa2}.
-This module is responsible for traversing the parse tree and applying Thompson\textquotesingle s Construction algorithm to generate an NFA that recognizes the language defined by the regular expression. The NFA is then converted to an equivalent DFA using the Power-set Construction algorithm. Several optimizations are applied to the DFA to reduce its size, and possibly a DFA minimization algorithm, e.g., Hopcroft\textquotesingle s algorithm, is applied. 
+The parser produces a parse tree and passes it to the DFA Generator module. This module is responsible for:
 
+\begin{enumerate}
+    \item Checking the pattern if it is simple enough to be delegated to the more efficient SIMD matcher.
+    \item If the pattern can not be delegated to the SIMD matcher, it traverses the parse tree and applies Thompson\textquotesingle s Construction algorithm to generate an NFA that recognizes the language defined by the regular expression. The NFA is then converted to an equivalent DFA using the Power-set Construction algorithm. Several optimizations are applied to the DFA to reduce its size. We discuss DFA minimization in more detail in subsection \ref{dfamin}. Figure \ref{fig:sa2} shows the high level architecture of the DFA generation section of the module.
+\end{enumerate}
 
-\begin{figure}[htpb]
-\centering
-\includegraphics[width=0.45\textwidth]{imgs/sa2.png}
-\caption[DFA Generator]{DFA Generator Module.}\label{fig:sa2}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1.1cm, scale = 1,transform shape]
+        \node (visitor) [process] {RegExp Visitor};
+        \node (nfa) [process, below=of start] {NFA};
+        \node (dfa) [process, below=of nfa] {DFA};
+        \node (mindfa) [process, below=of dfa] {Minimal DFA};
+        
+    \draw [arrow, <-] (visitor.north) -- node[above, anchor=center,fill=white] {Parse Tree} ++(0, 1);
+    \draw [arrow] (visitor) -- node[anchor=center,fill=white] {Thompson's construction} (nfa);
+    \draw [arrow] (nfa) -- node[anchor=center,fill=white] {Powerset construction} (dfa);
+    \draw [arrow] (dfa) -- node[] {} (mindfa);
+
+    \end{tikzpicture}
+    \caption{DFA Generator Module.}
+    \label{fig:sa2}
 \end{figure}
+
+% \begin{figure}[htpb]
+% \centering
+% \includegraphics[width=0.45\textwidth]{imgs/sa2.png}
+% \caption[DFA Generator]{DFA Generator Module.}\label{fig:sa2}
+% \end{figure}
 
 \subsection{Finite-Automata Representation}
 Listing \ref{lst:fas} shows a simplified structure of a finite automaton which is inspired by the design of the \texttt{dk.brics.automaton}\cite{dk} Java library for finite-state automata and regular expressions.
 
-The \texttt{\textbf{FiniteAutomaton}} class represents a generic finite automaton. It consists of two fields \texttt{\textbf{initial\_state}} pointer to the initial state of the automaton and the boolean \texttt{\textbf{deterministic}} to determine the type of the automaton \texttt{\textbf{\{NFA, DFA\}}}. Each automaton state has a unique global \texttt{\textbf{id}} field, a boolean \texttt{\textbf{accept}} to mark the state as a final accept state and a set of transitions. Each transition has a \texttt{\textbf{min}} and \texttt{\textbf{max}} fields to represent the range of input values that the transition is active for and a pointer \texttt{\textbf{to}} that represents the next state. Representing each transition as range instead of a single character simplifies the code generation phase and decreases the size of the transition table as shown in Figure \ref{fig:automatonrange}. Listing  \ref{lst:faexamplecode} shows an example how to represent the pattern \texttt{\textbf{(a|b|c)d}} using the aforementioned structures.
+The \texttt{\textbf{FiniteAutomaton}} class represents a generic finite automaton. It consists of two fields \texttt{\textbf{initial\_state}} pointer to the initial state of the automaton and the boolean \texttt{\textbf{deterministic}} to determine the type of the automaton \texttt{\textbf{\{NFA, DFA\}}}. Each automaton state has a unique global \texttt{\textbf{id}} field, a boolean \texttt{\textbf{accept}} to mark the state as a final accept state and a set of transitions. Each transition has a \texttt{\textbf{min}} and \texttt{\textbf{max}} fields to represent the range of input values that the transition is active for and a pointer \texttt{\textbf{to}} that represents the next state. 
 
-\begin{listing}[htpb]
+Representing each transition as range instead of a single character simplifies the code generation phase and decreases the size of the transition table. Figure \ref{fig:automatonrange} shows an example automaton with transition ranges.
+
+Listing \ref{lst:faexamplecode} shows an example how to represent the pattern \texttt{\textbf{(a|b|c)d}} using the aforementioned structures.
+
+\begin{listing}[H]
 \begin{minted}[breaklines=true,frame=lines,linenos]{cpp}
 class FiniteAutomaton {
     public:
         bool deterministic;
         std::shared_ptr<FiniteAutomatonState> initial_state;
 }
-
 class FiniteAutomatonState {
     public:
         uint32_t id;
         bool accept;
         std::unordered_set<FiniteAutomatonTransition> transitions;
 }
-
 class FiniteAutomatonTransition {
     public:
         uint32_t min, max;
         std::shared_ptr<FiniteAutomatonState> to;
 }
 \end{minted}
-\caption[Finite Automata Structure]{Simplified FA Structure}\label{lst:fas}
+\caption{Simplified FA Structure.}\label{lst:fas}
 \end{listing}
 
-
-\begin{listing}[htpb]
-\begin{minted}[breaklines=true,frame=lines,linenos]{cpp}
-    // states s0,s1,s2
-    auto s0 = std::make_shared<FiniteAutomatonState>();
-    auto s1 = std::make_shared<FiniteAutomatonState>();
-    auto s2 = std::make_shared<FiniteAutomatonState>();
-    
-    // fa object with s0 as initial state
-    auto fa = std::make_unique<FiniteAutomaton>(s0);
-    
-    // add transitions s0->s1 and s1->s2
-    s0.transitions.emplace(('a' /*min*/, 'c' /*max*/, s1);
-    // min = max since transition with single char
-    s1.transitions.emplace('d' /*min*/, 'd' /*max*/, s2);
-    
-    s2.accept = true; // s2 is final state
-    fa.deterministic = true; // since it is a DFA
-\end{minted}
-\caption[Sample Code to Create FA for pattern]{Sample Code to Create FA for pattern \textbf{(a|b|c)d}}\label{lst:faexamplecode}
-\end{listing}
-
-\begin{figure}[htpb]
+\begin{figure}[H]
 \begin{subfigure}[b]{\textwidth}
 \centering
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,
@@ -235,11 +254,58 @@ class FiniteAutomatonTransition {
 \label{fig:automatonrangeb}
 
 \end{subfigure}
-\caption{Example DFA for pattern \textbf{(a|b|c)d}.}\label{fig:automatonrange}
+\caption{Generated DFA for pattern \textbf{(a|b|c)d}.}\label{fig:automatonrange}
 \end{figure}
 
+\begin{listing}[H]
+\begin{minted}[breaklines=true,frame=lines,linenos]{cpp}
+    // states s0,s1,s2
+    auto s0 = std::make_shared<FiniteAutomatonState>();
+    auto s1 = std::make_shared<FiniteAutomatonState>();
+    auto s2 = std::make_shared<FiniteAutomatonState>();
+    
+    // fa object with s0 as initial state
+    auto fa = std::make_unique<FiniteAutomaton>(s0);
+    
+    // add transitions s0->s1 and s1->s2
+    s0.transitions.emplace(('a' /*min*/, 'c' /*max*/, s1);
+    // min = max since transition with single char
+    s1.transitions.emplace('d' /*min*/, 'd' /*max*/, s2);
+    
+    s2.accept = true; // s2 is final state
+    fa.deterministic = true; // since it is a DFA
+\end{minted}
+\caption[Sample Code to Create FA for pattern]{Sample Code to Create FA for pattern \textbf{(a|b|c)d}.}\label{lst:faexamplecode}
+\end{listing}
+
+
 \subsection{Regular Expression to NFA}\label{subsection:regexnfa}
-ANTLR generates, in addition to the lexer and parser code, an abstract class \texttt{\textbf{ParseTreeVisitor}} that contains methods that are called when walking the Parse Tree and implements the Visitor design pattern. Listing \ref{lst:fasvisitor} shows a snippet of the class. While walking the parse tree, we visit each tree node, and based on the node type and context, we apply the appropriate part of Thompson's Construction algorithm explained below to generate the NFA.
+The first step in the DFA generation is to generate a  Non deterministic finite automaton (NFA) from the regular expression. The DFA Generator module takes the parse tree generated by the ANTLR parser. Figure \ref{fig:parsetree} shows an example parse tree for the pattern \texttt{\textbf{[ab]c}}. The parse tree consists of nodes and branches that represent the syntactic structure of a the pattern according to our parsing grammar. We can walk down through the tree and execute some actions depending on the node type and context.
+
+ANTLR provides an abstract class \texttt{\textbf{RegexVisitor}} that contains methods that we can call to down the parse tree. Listing \ref{lst:fasvisitor} shows a snippet of the class. The class contains a method for each type of node in the parse tree. While walking down the parse tree, we visit each tree node (through each node's dedicated function), and based on the node type and context, we apply the appropriate part of Thompson's Construction algorithm explained below to generate the NFA.
+
+
+\begin{listing}[H]
+\begin{minted}[breaklines=true,frame=lines,linenos]{cpp}
+class RegexVisitor : public antlr4::tree::AbstractParseTreeVisitor {
+public:
+    virtual antlrcpp::Any visitRegex(RegexCtx *ctx) = 0;
+    virtual antlrcpp::Any visitAlternation(AlternationCtx *ctx) = 0;
+    virtual antlrcpp::Any visitExpression(ExpressionCtx *ctx) = 0;
+    virtual antlrcpp::Any visitElement(ElementCtx *ctx) = 0;
+    virtual antlrcpp::Any visitRegularCharacter(RegularCharacterCtx *ctx) = 0;
+    ...
+}
+\end{minted}
+\caption[RegExp ParseTree Visitor Class]{RegExp ParseTree Visitor Class.}\label{lst:fasvisitor}
+\end{listing}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{tree.pdf}
+    \caption{Parse tree for the pattern \texttt{\textbf{[ab]c}}.}
+    \label{fig:parsetree}
+\end{figure}
 
 \subsubsection{Literals}
 % TODO: one transition
@@ -255,38 +321,68 @@ A character literal is represented by an automaton of two states as in Figure \r
   \path    (s0) edge                          node {$a$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton to recognize the pattern \texttt{\textbf{a}}}
+\caption{Automaton for the pattern \texttt{\textbf{a}}.}
 \label{fig:auto1}
 \end{figure}
-
-
 \subsubsection{Alternations}\label{epsremoval}
 A new state \texttt{\textbf{p}} is added with epsilon transition to the start state of each alternation.
 
-An epsilon transition from \texttt{\textbf{state0}} to  \texttt{\textbf{state1}} is equivalent to adding all transitions of state1 and marking  \texttt{\textbf{state0}} as accept if  \texttt{\textbf{state1}} was an accept state then, removing  \texttt{\textbf{state1}} from the new automaton. Figure \ref{fig:auto2} shows the alternation between the two patterns \texttt{\textbf{a}} and \texttt{\textbf{x}}.
+An epsilon transition from state \texttt{\textbf{p0}} to state \texttt{\textbf{p1}} is equivalent to adding all transitions of state \texttt{\textbf{p1}} and marking state \texttt{\textbf{p0}} as accept if \texttt{\textbf{state1}} was an accept state then, removing  state \texttt{\textbf{p1}} from the new automaton. Figure \ref{fig:auto2} shows the construction steps for the alternation between the two patterns \texttt{\textbf{a}} and \texttt{\textbf{x}}.
 
-\begin{figure}[htpb]
+\begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape]
 
-  \node[state,initial] (p) {$p$};
-%   \node[state] (s0) [right of=p] {$s0$};
-%   \node[state] (s1) [below of=s0] {$s1$};
-  \node[state,accepting] (s2) [right of=p] {$s2$};
-  \node[state,accepting] (s3) [below of=s2] {$s3$};
+\subcaptionbox{Automaton for the pattern \texttt{\textbf{a}}.}{
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape,baseline]
 
-  \path    (p) edge                          node {$a$} (s2);
-  \path    (p) edge                          node {$x$} (s3);
-%   \path    (s0) edge                          node {$a$} (s2);
-%   \path    (s1) edge                          node {$x$} (s3);
+  \node[state,initial] (s0) {$s0$};
+  \node[state,accepting] (s1) [right of=s0]{$s1$};
+
+  \path    (s0) edge  node {$a$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton to recognize the alternation between the patterns \texttt{\textbf{a}} and \texttt{\textbf{x}}.}
+}\hfill
+\subcaptionbox{Automaton for the pattern \texttt{\textbf{x}}.}{
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape,baseline]
+
+  \node[state,initial] (s0) {$s2$};
+  \node[state,accepting] (s1) [right of=s0]{$s3$};
+
+  \path    (s0) edge  node {$x$} (s1);
+
+\end{tikzpicture}
+}
+\par\bigskip
+\subcaptionbox{Automaton for pattern \texttt{\textbf{a|x}} with epsilon transitions.}{
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2cm,scale = 1,transform shape, baseline]
+
+  \node[state,initial] (p) {$p$};
+  \node[state] (s0) [right of=p] {$s0$};
+  \node[state,accepting] (s1) [right of=s0] {$s1$};
+  \node[state] (s2) [below of=s0] {$s2$};
+  \node[state,accepting] (s3) [right of=s2] {$s3$};
+
+  \path    (p) edge                          node {$\epsilon$} (s0);
+  \path    (p) edge                          node {$\epsilon$} (s2);
+  \path    (s0) edge                          node {$a$} (s1);
+  \path    (s2) edge                          node {$x$} (s3);
+\end{tikzpicture}}\hfill
+\subcaptionbox{Final Automaton for pattern \texttt{\textbf{a|x}} with epsilon transitions removed.}{
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3.5cm,scale = 1,transform shape, baseline]
+
+  \node[state,initial] (p) {$p$};
+  \node[state,accepting] (s1) [right of=p] {$s1$};
+  \node[state,accepting] (s3) [below of=s1] {$s3$};
+
+  \path    (p) edge                          node {$a$} (s1);
+  \path    (p) edge                          node {$x$} (s3);
+\end{tikzpicture}}%
+
+\caption{Automaton construction steps for alternation pattern \texttt{\textbf{a|x}}.}
 \label{fig:auto2}
 \end{figure}
-
 \subsubsection{Concatenation}
-The initial state of the first automaton becomes the initial state of the new NFA. The accepting states of the first automaton are marked as not accepting. Moreover, the accept states of the second automaton are the accept states of the new NFA. Figure \ref{fig:auto3} shows the concatenation between two patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.
+The initial state of the first automaton becomes the initial state of the new NFA. The accepting states of the first automaton are marked as not accepting. Moreover, the accept states of the second automaton are the accept states of the new NFA. Finally, an epsilon transition is added from each accept state of the first automaton to the initial states of the second automaton. Figure \ref{fig:auto3} shows the concatenation between two patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.
 
 \begin{figure}[htpb]
 \centering
@@ -305,7 +401,6 @@ The initial state of the first automaton becomes the initial state of the new NF
 \caption{Automaton to recognize the concatenation of the patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.}
 \label{fig:auto3}
 \end{figure}
-
 \subsubsection{Quantifiers}
 \textbf{Kleene Star}: Row 1 in Table \ref{tab:regexquant} is the Kleene star \texttt{\textbf{*}} quantifier. It is an unbounded quantifier and is supported by adding a loop to the NFA. A new start state \texttt{\textbf{p}} is added with epsilon transition to the start state the automaton. Epsilon transitions from the accept states to \texttt{\textbf{p}} is added and \texttt{\textbf{p}} is marked as accept. An example for Kleene star is show in Figure \ref{fig:autoq1}.
 
@@ -384,8 +479,6 @@ The initial state of the first automaton becomes the initial state of the new NF
 \caption{Automaton to recognize pattern \texttt{\textbf{a\{1,3\}}}.}
 \label{fig:autoq4}
 \end{figure}
-
-
 \subsubsection{Character Classes}
 \textit{Positive} Character Classes are treated the same way as alternations, e.g., NFA for character class \texttt{\textbf{[ax]}} is equivalent to NFA recognizing \texttt{\textbf{a|x}}. Figure \ref{fig:auto2} shows the resulting automaton.
 
@@ -441,23 +534,6 @@ The initial state of the first automaton becomes the initial state of the new NF
 \caption{Automaton Construction Steps for negative character class \texttt{\textbf{[\textasciicircum ax]}}. Char \texttt{\textbf{a}} is hex \texttt{\textbf{0x61}} and Char \texttt{\textbf{x}} is \texttt{\textbf{0x78}}.}
 \label{fig:auto4}
 \end{figure}
-
-
-\begin{listing}[htpb]
-\begin{minted}[breaklines=true,frame=lines,linenos]{cpp}
-class RegexVisitor : public antlr4::tree::AbstractParseTreeVisitor {
-public:
-  /**
-   * Visit parse trees produced by RegexParser.
-   */
-    virtual antlrcpp::Any visitRegex(RegexContext *context)=0;
-    virtual antlrcpp::Any visitAlternation(AlternationContext *context)=0;
-    virtual antlrcpp::Any visitExpression(ExpressionContext *context)=0;
-    virtual antlrcpp::Any visitElement(ElementContext *context)=0;
-    ...
-\end{minted}
-\caption[RegExp ParseTree Visitor Class]{RegExp ParseTree Visitor Class}\label{lst:fasvisitor}
-\end{listing}
 
 
 \subsection{NFA to DFA}\label{subsection:nfdtodfa}
@@ -537,7 +613,7 @@ Figure \ref{fig:ps1} shows an example conversion NFA to DFA for pattern \texttt{
 \label{fig:ps1}
 \end{figure}
 
-\subsection{DFA Minimization}
+\subsection{DFA Minimization}\label{dfamin}
 The objective of DFA minimization is to convert a given DFA into an equivalent DFA with the fewest possible states. Two classes of states can be removed or merged from the original DFA without affecting the language it accepts. Without changing the language, it accepts the following types of states that can be removed or combined from the original DFA:
 
 \begin{itemize}
@@ -567,6 +643,8 @@ The problem with the interpreted code is:
 \label{lst:dfainterpreted}
 \end{listing}
 
+Due to the problems mentioned above with interpreted code, we use the \texttt{\textbf{CodeGen}} module to generate simple and efficient code for the DFA. The generated code is then passed to the LLVM JIT compiler to compile it and get a function pointer to the matching function we use later for matching the input text file.
+
 The general algorithm for code generation and execution is as follows:
 \begin{enumerate}
     \item The DFA is converted to single function \texttt{\textbf{traverse}} that takes two parameters the input string and its length and returns \texttt{\textbf{true}} if the pattern matches the input or \texttt{\textbf{false}} if no match is found or the input is finished before finding a match.
@@ -592,7 +670,6 @@ For the C++ backend, before the last step in the code-generation algorithm, we u
 \end{listing}
 
 Generating High-Level code C++ code is easy to implement and debug, but there are some disadvantages to this approach (1) The optimizing C++ compiler is slow compared to the LLVM Compiler. (2) Slow disk access is needed as the generated code must first be written to the disk since \texttt{\textbf{clang}} does not support compiling an in-memory string buffer. Therefore, The JIT Module has to read the LLVM IR from the disk before being JITed which adds extra latency. Most of the code-generation work focused on the LLVM backend for these reasons.
-
 
 \subsubsection{LLVM CodeGen}
 The \texttt{\textbf{CodeGen}} module generates code for the LLVM backend that is similar in structure to the code generated for C++ and follows the same general algorithm outlined above. However, it directly emits LLVM IR and is thus faster to JIT and optimize. LLVM tool-chain provides an excellent C++ API \cite{llvmapi} to help generate and validate the IR.
@@ -776,7 +853,7 @@ While UTF-32 is easy to implement and makes the DFA generation step easier and t
 \subsection{UTF-8}
 UTF-8 is the default encoding of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism inside the DFA. The engine treats the RegExp as a sequence of valid UTF-8 bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
 
-For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit nine followed by a space character then a sterling pound character which corresponds to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020\textbackslash u00A3}}. The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit.Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
+For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit nine followed by a space character then a sterling pound character which corresponds to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020 \textbackslash u00A3}}. These code points are equivalent to the following UTF-8 byte sequences \texttt{\textbf{0x39 0x20 0xC2 0xA3}} The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit. Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
 
 \begin{figure}[htbp]
 \centering
@@ -877,21 +954,11 @@ Searching for a pattern that consists only of string literals e.g \texttt{\textb
 In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{.*foobar.*}} and apply one of the two algorithms explained below based on the size of the pattern.
 
 \subsection{EPSM Algorithm}
-Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n ∗ m)$.
+Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
 
-The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m_i = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
-
-For the searching phase we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
+The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m' = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
 
 \begin{figure}[H]
-\centering
-\begin{cminted}{c}
-h = mm_cmpeq_epi8(a, b)
-r = mm_movemask_epi8(h)
-\end{cminted}
-\end{figure}
-
-\begin{figure}[htbp]
 \centering
 \begin{bytefield}{16}
 \bitheader{0,4,8,12,15} \\
@@ -916,6 +983,17 @@ r = mm_movemask_epi8(h)
     \caption{Example for \texttt{\textbf{wscmp(a,b)}} where $\alpha = 4$, $\gamma=4$ and $w = 16$.}
     \label{fig:wscmpex}
 \end{figure}
+
+For the searching phase we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
+
+\begin{figure}[H]
+\centering
+\begin{cminted}{c}
+h = mm_cmpeq_epi8(a, b)
+r = mm_movemask_epi8(h)
+\end{cminted}
+\end{figure}\\
+
 
 
 The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ characters. Therefore, Lets define  $N = \frac{n}{\alpha} - 1$ and the string $t$ of length $n$ as $T=T_0 T_1...T_N$. The instruction \texttt{\textbf{wscmp}} compares a block of the text $T_i$ is with the strings in the pre-processing array $B$. Let $s_j = wscmp(T_i, B_j) = b_0 b_1 ...b_{\alpha-1}$ for $0 \leq j < m'$ and $b_k = 1$ if and only if $T_{ik} = p_j$ for $0 \leq k < \alpha$. Lets also define $r = r_0 r_1...r_{m'-1}$ where $r_i = (s_i << i)$. It is apparent that the prefix of length $m'$ of the pattern $p$

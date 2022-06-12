@@ -17,6 +17,6 @@ The LLVM compiler infrastructure \cite{llvm} consists of reusable modular compil
 
 The main research question of this thesis is: Can a code-generating regular expressions engine built on top of LLVM be performant?
 
-To answer this question, we built a prototype regular expressions engine on top of LLVM. The engine takes as an input a regular expression and a text file containing the text to match. As a first step, it generates a data structure that matches the pattern. It then passes the data structure to a code-generation module (built on top of LLVM) responsible for compiling it into efficient machine code. Finally, The generated code processes the input text and does the regular expressions matching.
+To answer this question, we built a prototype regular expressions engine with Unicode support and dynamic compilation built on top of the LLVM compiler infrastructure. The engine takes as an input a regular expression and a text file containing the text to match. As a first step, it generates a data structure that matches the pattern. It then passes the data structure to a code-generation module (built on top of LLVM) responsible for compiling it into efficient machine code. Finally, The generated code processes the input text and does the regular expressions matching.
 
 We also compare our implementation with other popular regular expressions engines to evaluate the performance and viability of our idea. 

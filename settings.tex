@@ -40,6 +40,7 @@
 \usepackage{rotating}
 \usepackage{pdflscape}
 \usepackage{makecell}
+\usepackage{pdfpages}
 \usepackage{tabularx}
 \usepackage[square,numbers]{natbib}
 \bibliographystyle{abbrvnat}
@@ -124,3 +125,12 @@
 \setmainjfont{FandolSong}
 \usepackage{diagbox}
 % \usepackage[justification=centering]{caption}
+
+
+\usetikzlibrary{positioning}
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=yellow!30]
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,draw=black, fill=yellow!30]
+\tikzstyle{process} = [rectangle, minimum width=3cm, minimum height=1cm, draw=black, fill=white!30]
+\tikzstyle{process2} = [rectangle, minimum width=3cm, minimum height=1cm, draw=black, fill=green!30]
+\tikzstyle{decision} = [diamond, minimum width=3cm, minimum height=1cm, draw=black, fill=purple!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]

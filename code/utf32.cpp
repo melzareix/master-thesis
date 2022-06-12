@@ -1,4 +1,4 @@
-inline unsigned nextByte(const char* str, unsigned& idx) {
+inline unsigned nextCodepoint(const char* str, unsigned& idx) {
   unsigned c = 0;
   char b1 = str[idx];
   // determine number of utf8 bytes
@@ -14,7 +14,7 @@ bool traverse(const char * str, unsigned int n) {
   unsigned int c;
   s0:
     if (idx >= n) return false;
-  c = nextByte(str, idx);
-  if (c == 163) return true;
+    c = nextCodepoint(str, idx);
+    if (c == 0xA3 /*sterling pound codepoint*/) return true;
   return false;
 }
