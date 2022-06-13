@@ -302,8 +302,7 @@ In this benchmark, we test the sub-string literal matching of the different engi
     ]{485.87};
     \end{axis}
     \end{tikzpicture}
-    \caption{Matching performance on TPC-H Q13. Time is the mean ($\mu$) of three runs of the benchmark. Our SIMD implementation based on EPSM algorithm is the fastest.}
-    \label{fig:tpchres}
+    \caption{Matching performance on TPC-H Q13. Time is the mean ($\mu$) of three runs of the benchmark. Our SIMD implementation based on EPSM algorithm is the fastest.}\label{fig:tpchres}
 \end{figure}
 
 Figure \ref{fig:tpchres} shows the benchmark results. The results show that our SIMD implementation based on the EPSM algorithm was the fastest engine. It achieved a speedup of $2x$ over the heavily optimized RE2. It was also slightly faster than PCRE2 with a speedup of $1.1x$. The engines (Ours, RE2, and PCRE2) were much faster than the baseline Boost achieving $4.8x$, $2.37x$, and $4.36x$ speedup, respectively.
@@ -373,7 +372,7 @@ This benchmark aims to present a real scenario for our use case with tens of mil
 \hline
 \end{tabularx}}
 % \end{adjustbox}
-\caption{Patterns Used in Log Benchmark and Number of Matches.}\label{tab:pattlogbench}
+\caption{Patterns used in the Log benchmark and number of matches.}\label{tab:pattlogbench}
 \end{table}
 }
 

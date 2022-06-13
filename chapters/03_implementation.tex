@@ -25,7 +25,7 @@ OptimizationLevel & Optimization Level for LLVM optimizer (or clang for C++). Po
 \hline
 \end{tabularx}
 \end{adjustbox}
-\caption[CLI Configuration Options]{CLI Configuration Options.}\label{tab:cliconf}
+\caption{CLI Configuration Options.}\label{tab:cliconf}
 \end{table}}
 
 The engine validates the pattern, parses it, and generates a parse tree. We discuss the implementation of the parser in detail in Section \ref{section:parser}. The DFA Generator checks the pattern if it is simple enough to delegate it to a more efficient matcher. The matcher uses the SIMD instruction set to provide a faster way to match simple literals. We describe the SIMD matcher in detail in Section \ref{section:simdopt}.
@@ -606,7 +606,7 @@ The problem with the interpreted code is:
 
 \begin{listing}[htbp]
 \inputminted[breaklines=true,frame=lines,linenos]{cpp}{code/interpretted.cpp}
-\caption[Interpreted DFA Code]{Interpreted DFA Matching Code}
+\caption[Interpreted DFA Code]{Interpreted DFA matching code.}
 \label{lst:dfainterpreted}
 \end{listing}
 
@@ -632,7 +632,7 @@ Before the last step in the code generation algorithm above, we use the C++ \tex
 
 \begin{listing}[htbp]
 \inputminted[breaklines,frame=lines,linenos]{cpp}{code/ex.cpp}
-\caption{Generated C++ Code for pattern \texttt{\textbf{[a-z][0-9]}}.}\label{lst:cppex}
+\caption{Generated C++ code for pattern \texttt{\textbf{[a-z][0-9]}}.}\label{lst:cppex}
 \end{listing}
 
 Generating high-level C++ code is easy to implement and debug, but this approach has some disadvantages (1) The optimizing C++ compiler is slow compared to the LLVM Compiler. (2) Slow disk access is needed as the generated code must first be written to the disk as the C++ compiler \texttt{\textbf{clang}} does not support compiling an in-memory string buffer. Therefore, The JIT Compiler has to read the LLVM IR from the disk before being JITed which adds extra latency. For these reasons, most of the code-generation work focused on the LLVM backend for these reasons.
@@ -691,7 +691,7 @@ Returns a boolean value or a vector of boolean values based on comparison of its
 \textbf{uge}: unsigned greater or equal. \textbf{ult}: unsigned less than. \textbf{ule}: unsigned less or equal.\\
 \hline
 \end{tabularx}
-\caption[LLVM Instructions]{LLVM Instructions.}\label{tab:llvminst}
+\caption[LLVM Instructions.]{LLVM Instructions.}\label{tab:llvminst}
 \end{table}}
 
 Listing \ref{lst:llvmex} shows the complete code generated for the pattern. Line (1) defines the \texttt{\textbf{traverse}} function and its two parameters, an unsigned char pointer to input text, and the length of the input text.
@@ -729,7 +729,7 @@ Level        & Description  \\
 \textbf{-O3} & Enables more optimizations than -O2 that may take longer to complete or may result in large code size (in an attempt to make the program run faster).\\
 \hline
 \end{tabularx}
-\caption[LLVM Optimization Levels]{LLVM Optimization Levels.}\label{tab:optlevels}
+\caption{LLVM Optimization Levels.}\label{tab:optlevels}
 \end{table}}
 
 
@@ -749,7 +749,7 @@ The last step after the optimization is passing the optimized IR to the JIT comp
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{\includegraphics[width=1.42\textwidth]{code/cfga3.pdf}}%
-    \caption{Annotated CFG for Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}\label{fig:annocfg}
+    \caption{Annotated CFG for the generated LLVM code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}\label{fig:annocfg}
 \end{figure}
 
 \section{Unicode}
@@ -792,7 +792,7 @@ In UTF-32 mode, the DFA generated matches full code points, and the logic for re
   \path    (s0) edge                          node {$0x000000A3$} (s1);
 
 \end{tikzpicture}
-\caption[DFA to recognize pattern \texttt{\textsterling}]{UTF-32 DFA to recognize pattern \texttt{\textsterling}.}
+\caption{UTF-32 DFA to recognize pattern \texttt{\textsterling}.}
 \label{fig:utf32exdfa}
 \end{figure}
 
@@ -981,7 +981,7 @@ r = mm_movemask_epi8(h)
 
 \EndFunction
 \end{algorithmic}
-\caption{EPSMa Algorithm}\label{alg:espma}
+\caption{EPSMa Algorithm.}\label{alg:espma}
 \end{algorithm}
 
 The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ characters. Therefore, Lets define  $N = \frac{n}{\alpha} - 1$ and the string $t$ of length $n$ as $T=T_0 T_1...T_N$. The instruction \texttt{\textbf{wscmp}} compares a block of the text $T_i$ is with the strings in the pre-processing array $B$. Let $s_j = wscmp(T_i, B_j) = b_0 b_1 ...b_{\alpha-1}$ for $0 \leq j < m'$ and $b_k = 1$ if and only if $T_{ik} = p_j$ for $0 \leq k < \alpha$. Lets also define $r = r_0 r_1...r_{m'-1}$ where $r_i = (s_i << i)$. It is apparent that the prefix of length $m'$ of the pattern $p$
