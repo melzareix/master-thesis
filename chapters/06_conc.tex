@@ -1,7 +1,9 @@
 \chapter{Conclusion}\label{chapter:conclusion}
 This thesis presented our prototype implementation of a performant automata-based, SQL-compliant regular expressions engine with Unicode support and dynamic compilation built on top of the LLVM compiler infrastructure.
 
-Our implementation aims to handle regular expressions matching (as a sub-engine) inside a DBMS. It aims to deliver high performance on commonly used regular expressions while acknowledging that not all regular expressions can be handled by the underlying algorithm, which also has significant memory and compilation time requirements.
+Our implementation aims to handle regular expression matching (as a sub-engine) inside a DBMS. It focuses on delivering high performance on commonly used regular expressions while acknowledging that not all regular expressions can be handled by the underlying algorithm, which also has significant memory and compilation time requirements.
+
+The prototype supports code generation with LLVM or C++ as backend. It also supports two Unicode encoding modes: UTF-8 and UTF-32. Performance evaluations for compilation time show that the LLVM backend generates code substantially faster than C++ achieving up to $9x$ speedup. It also demonstrated the difference in compilation performance between UTF-8 and UTF-32. While the UTF-32 encoding compiles quicker in the average use case when patterns are primarily ASCII, UTF-8 compiles faster when dealing with patterns with a lot of Unicode code points. 
 
 Performance evaluations of the prototype to other popular general-purpose regular expression engines show promising results. On a dataset with 32 million rows, we achieved up to $2.7x$ speedup against PCRE2 and up to $1.8x$ speedup against RE2. These results show how adding code-generation and compilation is beneficial over large datasets, and a large number of runs amortizes the cost of compilation.
 
@@ -10,13 +12,13 @@ Performance evaluations of the prototype to other popular general-purpose regula
 Future work should focus on extending the engine features and optimizations. Possible features include:
 \begin{itemize}
     \item \textbf{Full Unicode Support}: Full Unicode Level 1 support should be added, followed by Unicode level 2 support.
-    \item \textbf{Regex Features}: Currently, we only support an essential subset of regular expressions features. We could extend the engine also to report the matching boundaries. Word-boundaries, Capture groups, anchored matches, and lookaheads are also popular features that could be useful to add and test its performance.  
+    \item \textbf{Regex Features}: Currently, we only support an essential subset of regular expressions features. We could extend the engine also to report the matching boundaries. Word-boundaries, capture groups, anchored matches, and lookaheads are also popular features that could be useful to implement and test its performance.
     \item \textbf{Adaptive Compilation}: The engine currently always JITs the DFA before execution which is costly for patterns that are executed on a small number of rows. We could improve this by doing adaptive compilation where we dynamically switch from interpretation to compilation only when needed.
 \end{itemize}
 
-While achieving good performance, the current engine only includes a small subset of optimizations. We can  extend it to include:
+While achieving good performance, the current engine only includes a small subset of optimizations. We can extend it to include:
 
 \begin{itemize}
-    \item \textbf{DFA minimization}: Adding DFA minimization algorithms, e.g., Hop-Croft algorithm, to further reduce the code generated and DFA transitions.
-    \item \textbf{RegExp Decomposition}: SIMD optimizations through regular expression decomposition is also another important optimization. A pattern e.g., \texttt{\textbf{ab|cd}} could be decomposed to two expressions \texttt{\textbf{ab}} and \texttt{\textbf{cd}} and EPSM algorithm used to search for the patterns instead of using the DFA. The importance of this optimization was shown in the results of Regex-Redux benchmark in sub-section \ref{regexredux}.
+    \item \textbf{DFA minimization}: Adding DFA minimization algorithms, e.g., HopCroft's algorithm, to further reduce the code generated and DFA transitions.
+    \item \textbf{Pattern Decomposition}: A pattern, e.g., \texttt{\textbf{ab|cd}}, could be decomposed into two expressions: \texttt{\textbf{ab}} and \texttt{\textbf{cd}}. Sub-string searching algorithms, e.g., EPSM, can be used to search for each sub-pattern instead of using the DFA. The performance gains of this optimization were shown in the results of the Regex-Redux benchmark in sub-section \ref{regexredux}.
 \end{itemize}

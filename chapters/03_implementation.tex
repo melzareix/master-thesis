@@ -681,7 +681,7 @@ Let us walk through an example of going from a DFA to LLVM IR and using the LLVM
 \label{fig:dfacodegenex}
 \end{figure}
 
-Table \ref{tab:llvminst} lists the LLVM IR instructions and their meaning needed to understand the code generated. Listing \ref{lst:llvmex} shows the complete code generated for the pattern.
+Table \ref{tab:llvminst} lists the LLVM IR instructions and their meaning needed to understand the code generated.
 
 {\renewcommand{\arraystretch}{1.5}% for the vertical padding
 \begin{table}[H]
@@ -718,7 +718,7 @@ Returns a boolean value or a vector of boolean values based on comparison of its
 \caption[LLVM Instructions]{LLVM Instructions.}\label{tab:llvminst}
 \end{table}}
 
-Lines 1 defines the \texttt{\textbf{traverse}} function and its two parameters, an unsigned char pointer to input text, and the length of the input text.
+Listing \ref{lst:llvmex} shows the complete code generated for the pattern. Line (1) defines the \texttt{\textbf{traverse}} function and its two parameters, an unsigned char pointer to input text, and the length of the input text.
 
 Lines (2-5) describe the entry block in which the \texttt{\textbf{idx}} variable is defined and initialized to zero. This variable is used to traverse the input text. After that, an unconditional jump to the initial state starts the matching process.
 
@@ -802,7 +802,7 @@ Unicode level 3 defines the specifications for tailored regular expression suppo
 
 Our prototype did not aim for a complete Unicode Level 1 support due to time constraints. We implemented only requirement seven \textbf{Code Points}, that is, that Unicode text is interpreted semantically by code points, not code units. Adding support for requirements (1-3) is an easy task and would primarily require parser grammar changes. There is little to no support for either Level 2 or Level 3. Most of this is due to the features being either complex/challenging to develop or, at the very least, extremely difficult to implement without losing performance.
 
-In our prototype, We support two modes Unicode modes for matching: UTF-8 and UTF-32. We assume for both modes that both the pattern and input string are UTF-8 encoded (which includes ASCII).
+In our prototype, we support two modes Unicode modes for matching: UTF-8 and UTF-32. We assume for both modes that both the pattern and input string are UTF-8 encoded (which includes ASCII).
 
 \subsection{UTF-32}
 We implemented this as the first step toward supporting Unicode in our prototype. 
@@ -827,7 +827,7 @@ To handle UTF-32 character encoding, a helper function \texttt{\textbf{nextCodep
 
 The function starts by loading the first byte in the text and then calls another helper function \texttt{\textbf{getLength}} that determines the number of bytes of the code point. As per Table \ref{tab:utf8}, the prefix of the first byte determine the number of bytes of the code point. It then calls a third helper function \texttt{\textbf{readMultiByte}} that reads the next \texttt{\textbf{byteLen}} bytes and encodes them to return the code point. Finally, the \texttt{\textbf{idx}} variable is incremented by \texttt{\textbf{byteLen}} to point to the start of the next code point.
 
-While UTF-32 is easy to implement and makes the DFA generation step easier and results in an overall smaller automata, It is space inefficient since, in DFA generation, we have to store each transition as a 32-bit Integer, and the repeated function calls and logic for reading the full code point is costly and impacts the performance. In Chapter \ref{chapter:evaluation}, we evaluate the performance of UTF-32 against UTF-32.
+While UTF-32 is easy to implement and makes the DFA generation step easier and results in an overall smaller automata, It is space inefficient since, in DFA generation, we have to store each transition as a 32-bit Integer, and the repeated function calls and logic for reading the full code point is costly and impacts the performance. In Chapter \ref{chapter:evaluation}, we evaluate the performance of UTF-32 against UTF-8.
 
 \begin{listing}[H]
 \inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{cpp}{code/utf32.cpp}
