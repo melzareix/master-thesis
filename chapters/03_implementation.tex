@@ -411,7 +411,7 @@ The initial state of the first automaton becomes the initial state of the new NF
 
 
 \noindent
-\textbf{Optional (Zero or one)}: Row 2 in Table \ref{tab:regexquant} is the Optional quantifier \texttt{\textbf{?}}. It is a bounded quantifier and is  equivalent to the alternation of an NFA and the empty string epsilon e.g \texttt{\textbf{a?}} is equivalent to \texttt{\textbf{a|\epsilon}}. Figure \ref{fig:autoq3} shows an example Automaton.
+\textbf{Optional (Zero or one)}: Row 2 in Table \ref{tab:regexquant} is the Optional quantifier \texttt{\textbf{?}}. It is a bounded quantifier and is  equivalent to the alternation of an NFA and the empty string epsilon, e.g., \texttt{\textbf{a?}} is equivalent to \texttt{\textbf{a|\epsilon}}. Figure \ref{fig:autoq3} shows an example Automaton.
 
 
 \begin{figure}[htpb]
@@ -449,7 +449,7 @@ The initial state of the first automaton becomes the initial state of the new NF
 \end{figure}
 
 \newpage
-\textbf{Counting}: Row 4 in Table \ref{tab:regexquant} is the counting quantifier. It's represented as alternation e.g \texttt{\textbf{a\{1,3\}}} is equivalent to \texttt{\textbf{a(a(a|\epsilon)|\epsilon)}} or \texttt{\textbf{a|aa|aaa}}. Figure \ref{fig:autoq4} shows the example automata.
+\textbf{Counting}: Row 4 in Table \ref{tab:regexquant} is the counting quantifier. It's represented as alternation, e.g., \texttt{\textbf{a\{1,3\}}} is equivalent to \texttt{\textbf{a(a(a|\epsilon)|\epsilon)}} or \texttt{\textbf{a|aa|aaa}}. Figure \ref{fig:autoq4} shows the example automata.
 
 \begin{figure}[H]
 \centering
@@ -471,7 +471,7 @@ The initial state of the first automaton becomes the initial state of the new NF
 \subsubsection{Character Classes}
 \textit{Positive} character classes are treated the same way as alternations, e.g., NFA for character class \texttt{\textbf{[ax]}} is equivalent to NFA recognizing \texttt{\textbf{a|x}}. Figure \ref{fig:auto2} shows the resulting automaton.
 
-\textit{Negative} Character Classes are equivalent to applying \texttt{\textbf{intersection}} between the \texttt{\textbf{anyChar}} wildcard automata and automata recognizing the \texttt{\textbf{Complement}} of the character class, e.g. \texttt{\textbf{[\textasciicircum ax]}} is equivalent to \texttt{\textbf{$\_ \cap [ax]$}}. Figure \ref{fig:auto4} shows the result automata where transitions are encoded in hex-decimal, and the language of the NFA is the ASCII character set. This operation is costly since the intersection uses the cross-product automaton construction method, which requires converting NFA to DFA first and is quadratic in the number of states.
+\textit{Negative} Character Classes are equivalent to applying \texttt{\textbf{intersection}} between the \texttt{\textbf{anyChar}} wildcard automata and automata recognizing the \texttt{\textbf{Complement}} of the character class, e.g., \texttt{\textbf{[\textasciicircum ax]}} is equivalent to \texttt{\textbf{$\_ \cap [ax]$}}. Figure \ref{fig:auto4} shows the result automata where transitions are encoded in hex-decimal, and the language of the NFA is the ASCII character set. This operation is costly since the intersection uses the cross-product automaton construction method, which requires converting NFA to DFA first and is quadratic in the number of states.
 
 \begin{figure}[htbp]
 
@@ -695,7 +695,7 @@ Instruction        & Description  \\
 \hline
 \textbf{alloca} & Allocate a variable on the stack.\\
 \hline
-\textbf{getelementptr} & Get the address of a subelement of an aggregate data structure (e.g Arrays).\\
+\textbf{getelementptr} & Get the address of a sub element of an aggregate data structure (e.g., Arrays).\\
 \hline
 \textbf{load} & Load data from memory.\\
 \hline
@@ -892,9 +892,9 @@ $\langle0xEE-0xEF\rangle \langle0x80-0xBF\rangle \langle0x80-0xBF\rangle$
 
 
 \section{Literals Optimizations}\label{section:simdopt}
-Searching for a pattern that consists only of string literals, e.g., \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
+Searching for a pattern that consists only of string literals, e.g., \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when detecting a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
 
-In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{\%foobar\%}} and apply one of the two algorithms explained below based on the size of the pattern.
+In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{\%foobar\%}}, and apply one of the two algorithms explained below based on the size of the pattern.
 
 \begin{figure}[H]
 \centering
@@ -942,9 +942,9 @@ In our implementation, we detect these simple literal patterns, e.g., \texttt{\t
 \subsection{EPSM Algorithm}
 Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length $m$. 
 
-In our implementation, we implement the first search procedure EPSMa and we use it only for short patterns $(m <= 16)$ as its performance degrades as the length of the pattern increases. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
+In our implementation, we implement the first search procedure EPSMa and we use it only for short patterns $(m <= 16)$ as its performance degrades as the length of the pattern increases. Under these limitations, EPSM is very fast and runs in $O(n + occ)$ where $occ$ is the number of occurrences of the pattern $p$ in the text $t$. The asymptotic run-time for the general case is $O(n \times m)$.
 
-The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m' = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
+The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts with a processing phase (lines 3-8) on the prefix of the pattern of length $m' = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word, e.g., for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
 
 \begin{figure}[H]
 \centering
@@ -972,7 +972,7 @@ The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. Th
     \label{fig:wscmpex}
 \end{figure}
 
-For the searching phase we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
+For the searching phase, we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
 
 \begin{figure}[H]
 \centering
@@ -982,12 +982,8 @@ r = mm_movemask_epi8(h)
 \end{cminted}
 \end{figure}
 
-The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ characters. Therefore, Lets define  $N = \frac{n}{\alpha} - 1$ and the string $t$ of length $n$ as $T=T_0 T_1...T_N$. The instruction \texttt{\textbf{wscmp}} compares a block of the text $T_i$ is with the strings in the pre-processing array $B$. Let $s_j = wscmp(T_i, B_j) = b_0 b_1 ...b_{\alpha-1}$ for $0 \leq j < m'$ and $b_k = 1$ if and only if $T_{ik} = p_j$ for $0 \leq k < \alpha$. Lets also define $r = r_0 r_1...r_{m'-1}$ where $r_i = (s_i << i)$. It is apparent that the prefix of length $m'$ of the pattern $p$
-occurs at the beginning at position $j$ of $T_i$ if and only if $r_j = 1$. If $m = m'$ then the whole pattern occurs and we can report the occurrences of the pattern at positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$. Otherwise, we know that at the same positions the prefix of the pattern matches and the algorithm checks the occurrences beginning at those positions. At the end, the algorithm naively checks the $m' - 1$ possible occurrences crossing the blocks $T_i$ and $T_i+1$ are naively checked by the algorithm.
-
-The worst-case time complexity of the algorithm is $O(nm)$ as a naive check could be required for each position of the  However, for small patterns, the algorithm has a $O(n+occ)$ time complexity, where $occ$ is the number of occurrences of the pattern $p$ in the text $t$.
-
 \begin{algorithm}[H]
+\small
 \begin{algorithmic}[1]
 \State \alpha \gets the number of characters that fit in a single word. \Comment{For 128-bit registers and 8 bits per character $\alpha = 16$}
 \Function{EPSMa}{$p,m,t,n$} \Comment{pattern, pattern length, text, text length}
@@ -1018,6 +1014,12 @@ The worst-case time complexity of the algorithm is $O(nm)$ as a naive check coul
 \end{algorithmic}
 \caption{EPSMa Algorithm}\label{alg:espma}
 \end{algorithm}
+
+The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ characters. Therefore, Lets define  $N = \frac{n}{\alpha} - 1$ and the string $t$ of length $n$ as $T=T_0 T_1...T_N$. The instruction \texttt{\textbf{wscmp}} compares a block of the text $T_i$ is with the strings in the pre-processing array $B$. Let $s_j = wscmp(T_i, B_j) = b_0 b_1 ...b_{\alpha-1}$ for $0 \leq j < m'$ and $b_k = 1$ if and only if $T_{ik} = p_j$ for $0 \leq k < \alpha$. Lets also define $r = r_0 r_1...r_{m'-1}$ where $r_i = (s_i << i)$. It is apparent that the prefix of length $m'$ of the pattern $p$
+occurs at the beginning at position $j$ of $T_i$ if and only if $r_j = 1$. If $m = m'$ then the whole pattern occurs and we can report the occurrences of the pattern at positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$. Otherwise, we know that at the same positions the prefix of the pattern matches and the algorithm checks the occurrences beginning at those positions. At the end, the algorithm naively checks the $m' - 1$ possible occurrences crossing the blocks $T_i$ and $T_i+1$.
+
+The worst-case time complexity of the algorithm is $O(n \times m)$ as a naive check could be required for each position of the  However, for small patterns, the algorithm has a $O(n+occ)$ time complexity, where $occ$ is the number of occurrences of the pattern $p$ in the text $t$.
+
 
 \subsection{Generic SIMD Algorithm}
 This Generic SIMD algorithm \cite{simdalgo} is slower than the EPSMa algorithm but applies to patterns of any size. This algorithm's main idea is to use the equality of the pattern's initial and last characters as a predicate for a potential match. The pattern's two characters (first and last) are copied in two SIMD registers, $R1$ and $R2$, respectively. Then in each iteration of the algorithm, two chunks of strings are loaded into two other SIMD registers. The first chunk $C1$ is read from offset $i$ and the second chunk $C2$ is read from offset $i + k - 1$, where $k$ is the pattern length. Then the algorithm computes a vector expression $M1 = (R1 = C1)$ and $M2 = (R2 = C2)$ then $M = (M1 \& M2)$ that yields a bit mask where a set bit in the mask signals a position of potential match. At last, only at these positions exact comparisons of the pattern and the text are performed.
