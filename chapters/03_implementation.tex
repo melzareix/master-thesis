@@ -762,33 +762,29 @@ Applying the LLVM optimizer with Level \textbf{-O2} to the code generated yields
 The last step after the optimization is passing the optimized IR to the JIT compiler that compiles it and returns a function pointer to the traverse function used for matching.
 
 \begin{longlisting}
-\inputminted[breaklines=true,frame=lines,linenos]{llvm}{code/irbefore.ll}
+\inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{llvm}{code/irbefore.ll}
 \caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}
 \label{lst:llvmex}
 \end{longlisting}
 
 \begin{listing}[H]
-\inputminted[breaklines=true,frame=lines,linenos]{llvm}{code/irafter.ll}
+\inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{llvm}{code/irafter.ll}
 \caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} after LLVM optimizations.}
 \label{lst:llvmexs}
 \end{listing}
 
-% \begin{adjustbox}{width=\textwidth}
 \begin{figure}[H]
     \makebox[\textwidth][c]{\includegraphics[width=1.42\textwidth]{code/cfga3.pdf}}%
     \caption{Annotated CFG for Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}
     \label{fig:annocfg}
 \end{figure}
-% \end{adjustbox}
-
-
 
 \section{Unicode}
-Unicode is a standard that the Unicode Consortium created specifically to encode all of the characters in all of the world's writing systems. All modern database engines support Unicode characters, and users expect some kind of Unicode support. Therefore, The addition of basic Unicode support to our prototype is a must-have feature. Also, since Unicode is an extensive character set, adding Unicode support helps test how well our prototype scales. Regular expression engines that are only adapted to handle small character sets, e.g., ASCII, will typically not scale well.
+Unicode is a standard that the Unicode Consortium created specifically to encode all of the characters in all of the world's writing systems. All modern database engines support Unicode characters, and users expect some kind of Unicode support. Therefore, Adding basic Unicode support to our prototype is a must-have feature. Also, since Unicode is an extensive character set, adding Unicode support helps test how well our prototype scales. Regular expression engines that are only adapted to handle small character sets, e.g., ASCII, will typically not scale well.
 
 The Unicode Consortium has published guidelines \cite{unicodeguideline} on how regular expression engines can support Unicode. The guidelines specify three levels of Unicode support: Basic, Extended and Tailored.
 
-Unicode level 1 support (Basic Unicode Support) defines the guidelines for minimal level for useful Unicode support. The results of regular expression matching at this level are not country or language dependent. To accomplish complete Unicode processing at this level, the user of the regular expression engine would need to define more complicated regular expressions. A regular expression engine claiming conformance with Unicode level one must support:
+Unicode level 1 support (Basic Unicode Support) defines the guidelines for minimal level for useful Unicode support. The results of regular expression matching at this level are not country or language-dependent. To accomplish complete Unicode processing at this level, the user of the regular expression engine would need to define more complicated regular expressions. A regular expression engine claiming conformance with Unicode level one must support:
 
 \begin{enumerate}
     \item \textbf{Hex Notation}: An implementation must provide a means for expressing any Unicode code point (from U+0000 to U+10FFFF) using the hexadecimal code point encoding to meet these criteria.
@@ -797,7 +793,6 @@ Unicode level 1 support (Basic Unicode Support) defines the guidelines for minim
     \item \textbf{Simple Word Boundaries}: An engine supporting the test for word boundaries, e.g., the pattern \textbf{\textbackslash b} must be extended to include characters with the alphabetic property, characters from the Unicode decimal general category, zero-width joiners, or zero-width non-joiners.
     \item \textbf{Simple Loose Matches}: An engine supporting case-less matching must be extended to include at the very least the simple, default Unicode case-insensitive matching. Also, if it supports case conversions, it shall provide at least the simple, default Unicode case folding.
     \item \textbf{Line Boundaries}: A regular expression engine that supports line boundaries must support CRLF, LF, CR, NEL (U+0085), PARAGRAPH SEPARATOR (U+2029), and LINE SEPARATOR (U+2028).
-    \newpage
     \item \textbf{Code Points}: An essential requirement is that Unicode text is semantically interpreted by code point rather than code unit.
 \end{enumerate}
 
@@ -805,13 +800,13 @@ Unicode level 2 support for regular expression engines is referred to as Unicode
 
 Unicode level 3 defines the specifications for tailored regular expression support. A regular expression engine can be tailored for a given area and utilized by specific groups of end-users.
 
-Our prototype did not aim for a complete Unicode Level 1 support due to time constraints. We implemented only requirement seven \textbf{Code Points} that is that the Unicode text is interpreted semantically by code points, not code units. Adding support for requirements (1-3) is an easy task and would primarily require parser grammar changes. There is little to no support for either Level 2 or Level 3. Most of this is due to the features being either complex/challenging to develop or, at the very least, extremely difficult to implement without losing performance.
+Our prototype did not aim for a complete Unicode Level 1 support due to time constraints. We implemented only requirement seven \textbf{Code Points}, that is, that Unicode text is interpreted semantically by code points, not code units. Adding support for requirements (1-3) is an easy task and would primarily require parser grammar changes. There is little to no support for either Level 2 or Level 3. Most of this is due to the features being either complex/challenging to develop or, at the very least, extremely difficult to implement without losing performance.
 
 In our prototype, We support two modes Unicode modes for matching: UTF-8 and UTF-32. We assume for both modes that both the pattern and input string are UTF-8 encoded (which includes ASCII).
 
 \subsection{UTF-32}
-We implemented this as the first step toward handling Unicode in our prototype. 
-In the UTF-32 mode, the DFA generated matches full code points, and the logic for character decoding is handled outside the DFA by helper methods, effectively making the alphabet of the DFA the full Unicode range \texttt{\textbf{0x000000-0x1FFFFF}}. Figure \ref{fig:utf32exdfa} shows the an example DFA to match the sterling character \texttt{\textsterling}.
+We implemented this as the first step toward supporting Unicode in our prototype. 
+In UTF-32 mode, the DFA generated matches full code points, and the logic for reading a full code point from the input text is handled outside the DFA loop by helper methods, effectively making the alphabet of the DFA the full Unicode range \texttt{\textbf{[0x000000-0x1FFFFF]}}. Figure \ref{fig:utf32exdfa} shows an example DFA to match the sterling character \texttt{\textbf{\textsterling}} (\textbackslash u00A3).
 
 \begin{figure}[H]
 \centering
@@ -824,23 +819,28 @@ In the UTF-32 mode, the DFA generated matches full code points, and the logic fo
   \path    (s0) edge                          node {$0x000000A3$} (s1);
 
 \end{tikzpicture}
-\caption[DFA to recognize pattern \texttt{\textsterling}]{DFA to recognize pattern \texttt{\textsterling}. The transition contains the code point of the character.}
+\caption[DFA to recognize pattern \texttt{\textsterling}]{UTF-32 DFA to recognize pattern \texttt{\textsterling}.}
 \label{fig:utf32exdfa}
 \end{figure}
 
-To handle the character decoding a new function \texttt{\textbf{nextByte}} is added in the  code generation step as shown in Listing \ref{lst:utf32nextbyte}. In this function the UTF-8 string is passed and the number of bytes of the code-point are determined then using the other helper function \texttt{\textbf{readMultiByte}} the complete code point is read and returned and we can continue the DFA matching in line \texttt{\textbf{18}}.
+To handle UTF-32 character encoding, a helper function \texttt{\textbf{nextCodepoint}} is added in the code generation step. Listing \ref{lst:utf32nextbyte} shows C++ code to recognize the pattern \texttt{\textbf{\textsterling}} with UTF-32. This function takes as an input a UTF-8 encoded input text and the index of first byte of the code point. It returns a full Unicode code point.
 
-While UTF-32 is easy to implement and makes the DFA generation step easier and the smaller, it is space inefficient since, in DFA generation, we have to store each transition as a 32-bit Integer, and the repeated function calls and logic for UTF-8 decoding, then UTF-32 encoding is costly and impacts the performance.
-\begin{listing}[htbp]
-\inputminted[breaklines=true,frame=lines,linenos]{cpp}{code/utf32.cpp}
-\caption[Code generated for handling Recognizing UTF-32 pattern]{Code generated for handling Recognizing UTF-32 pattern.}
+The function starts by loading the first byte in the text and then calls another helper function \texttt{\textbf{getLength}} that determines the number of bytes of the code point. As per Table \ref{tab:utf8}, the prefix of the first byte determine the number of bytes of the code point. It then calls a third helper function \texttt{\textbf{readMultiByte}} that reads the next \texttt{\textbf{byteLen}} bytes and encodes them to return the code point. Finally, the \texttt{\textbf{idx}} variable is incremented by \texttt{\textbf{byteLen}} to point to the start of the next code point.
+
+While UTF-32 is easy to implement and makes the DFA generation step easier and results in an overall smaller automata, It is space inefficient since, in DFA generation, we have to store each transition as a 32-bit Integer, and the repeated function calls and logic for reading the full code point is costly and impacts the performance. In Chapter \ref{chapter:evaluation}, we evaluate the performance of UTF-32 against UTF-32.
+
+\begin{listing}[H]
+\inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{cpp}{code/utf32.cpp}
+\caption{Generated C++ code for the pattern \texttt{\textbf{\textsterling}} with UTF-32 encoding.}
 \label{lst:utf32nextbyte}
 \end{listing}
 
 \subsection{UTF-8}
-UTF-8 is the default encoding of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism inside the DFA. The engine treats the regular expression as a sequence of valid UTF-8 bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
+UTF-8 is the default encoding mode of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism as states inside the DFA. The engine reads the regular expression as a sequence of bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
 
-For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit nine followed by a space character then a sterling pound character which corresponds to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020 \textbackslash u00A3}}. These code points are equivalent to the following UTF-8 byte sequences \texttt{\textbf{0x39 0x20 0xC2 0xA3}} The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit. Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
+As a demonstration of the DFA generation for UTF-8, Let us use the pattern ``\texttt{9\textvisiblespace \textsterling}" as an example. This pattern matches the digit nine followed by a space character then a sterling pound character. This pattern corresponds to the following sequence of code points \texttt{\textbf{\textbackslash u0039\textbackslash u0020\textbackslash u00A3}}. These code points are equivalent to the following UTF-8 byte sequences \texttt{\textbf{0x39 0x20 0xC2 0xA3}}. The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit (byte). Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
+
+At matching time, the matching function reads the input text one byte at a time, similar to a regular DFA without Unicode. This approach results in bigger DFAs but is faster and more space-efficient than UTF-32, as all the transitions are only a single byte, and there are no extra function calls.
 
 \begin{figure}[htbp]
 \centering
@@ -861,16 +861,15 @@ For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisibl
 
 \end{tikzpicture}
 \end{adjustbox}
-\caption{DFA to recognize pattern \texttt{9\textvisiblespace \textsterling}.}
+\caption{DFA to recognize pattern \texttt{9\textvisiblespace \textsterling} with UTF-8.}
 \label{fig:utf8exdfa}
 \end{figure}
 
 
-\subsubsection{Byte Ranges Transformation}
+\subsubsection{Character Ranges}
+Embedding UTF-8 decoding inside the byte DFA raises issues with character classes that include ranges. To demonstrate the issue, let us say we want to match any Cyrillic character; we can do so with the pattern \texttt{\textbf{[\textbackslash u0400-\textbackslash u04FF]}}. The set of allowed bytes for this range can be expressed as a sequence of byte ranges: $\langle0xD0-0xD3\rangle \langle0x80-0xBF\rangle$. We can achieve this by simply encoding the boundaries \texttt{\textbf{\textbackslash u0400}} is encoded as $\langle0xD0 \; 0x80\rangle$ and \texttt{\textbf{\textbackslash u04FF}} is encoded as $\langle0xD3 \; 0xBF\rangle$ then we can create ranges from each corresponding pair of bytes: $0xD0 \rightarrow 0xD3$ and $0xD3 \rightarrow 0xBF$.
 
-Generating byte DFA with embedded UTF-8 decoding raises issues with converting Unicode code-points to UTF-8 byte ranges. To demonstrate the issue, let us say we want to match any Cyrillic character; we can do so with the following pattern \texttt{\textbf{[\textbackslash u0400-\textbackslash u04FF]}}. The set of allowed bytes for this range can be expressed as a sequence of byte ranges: $\langle0xD0-0xD3\rangle \langle0x80-0xBF\rangle$. We can achieve this by simply encoding the boundaries \texttt{\textbf{\textbackslash u0400}} is encoded as $\langle0xD0 \; 0x80\rangle$ and \texttt{\textbf{\textbackslash u04FF}} is encoded as $\langle0xD3 \; 0xBF\rangle$ then we can create ranges from each corresponding pair of bytes: $D0 \rightarrow 0xD3$ and $0xD3 \rightarrow 0xBF$.
-
-Now lets try to extend the range to include Cyrillic Supplementary characters to the range. The pattern becomes \texttt{\textbf{[\textbackslash u0400-\textbackslash u052F]}}. Applying the same algorithm above \texttt{\textbf{[\textbackslash u052F}} is encoded as $\langle0xD4 \; 0xAF\rangle$ and we get the following sequence of byte ranges: $\langle0xD0-0xD4\rangle \langle0x80-0xAF\rangle$. However, this range is not correct because this range doesn't capture many characters, for example, \texttt{\textbf{\textbackslash u04FF}} as its last byte, $0xBF$ isn't in the range $\langle0x80-0xAF\rangle$. Instead we would need two sequences of byte ranges:
+Now, let us try to extend the range to include Cyrillic Supplementary characters. The pattern becomes \texttt{\textbf{[\textbackslash u0400-\textbackslash u052F]}}. Applying the same algorithm above,  \texttt{\textbf{\textbackslash u0400}} is encoded as $\langle0xD0 \; 0x80\rangle$ and \texttt{\textbf{\textbackslash u052F}} is encoded as $\langle0xD4 \; 0xAF\rangle$ and we get the following sequence of byte ranges: $\langle0xD0-0xD4\rangle \langle0x80-0xAF\rangle$. However, this range is not correct because this range doesn't capture many characters, for example, \texttt{\textbf{\textbackslash u04FF}} as its last byte, $0xBF$ isn't in the range $\langle0x80-0xAF\rangle$. Instead we would need two sequences of byte ranges:
 
 \begin{figure}[H]
 \centering
@@ -879,8 +878,7 @@ $\langle0xD4\rangle \langle0x80-0xAF\rangle$
 \end{figure}
 
 
-To overcome this issue, We adapted the algorithm for solving this problem by \citet{utf8-ranges} for the rust regex crate.
-Applying the correct algorithm, Figure \ref{fig:dfabmp} shows the resulting DFA for the character class for for the basic multilingual plane (BMP) \texttt{\textbf{[\textbackslash u{0000}-\textbackslash u{FFFF}]}} which is obtained by the partitioning the range to the following sequences of byte ranges:
+To overcome this issue, we adapted an algorithm developed by \citet{utf8-ranges} for the rust regex crate. The algorithm converts Unicode scalar values to equivalent ranges of UTF-8 bytes. Figure \ref{fig:dfabmp} shows the resulting DFA for basic multilingual plane (BMP) \texttt{\textbf{[\textbackslash u{0000}-\textbackslash u{FFFF}]}} character class after applying the algorithm. The DFA in the Figure is obtained by the partitioning the range to the following sequences of byte ranges:
 
 \begin{figure}[H]
 \centering
@@ -892,7 +890,13 @@ $\langle0xED\rangle \langle0x80-0x9F\rangle \langle0x80-0xBF\rangle$\\
 $\langle0xEE-0xEF\rangle \langle0x80-0xBF\rangle \langle0x80-0xBF\rangle$
 \end{figure}
 
-\begin{figure}[htbp]
+
+\section{Literals Optimizations}\label{section:simdopt}
+Searching for a pattern that consists only of string literals, e.g., \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
+
+In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{\%foobar\%}} and apply one of the two algorithms explained below based on the size of the pattern.
+
+\begin{figure}[H]
 \centering
 \begin{adjustbox}{width=0.8\textwidth,center=\textwidth}
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=3cm and 1.5cm,scale = 1,transform shape]
@@ -931,17 +935,14 @@ $\langle0xEE-0xEF\rangle \langle0x80-0xBF\rangle \langle0x80-0xBF\rangle$
 
 \end{tikzpicture}
 \end{adjustbox}
-\caption{DFA to decode valid UTF-8 code-point for BMP range \texttt{\textbf{[\textbackslash u0000-\textbackslash uFFFF]}}.}
+\caption{DFA to decode valid UTF-8 code point for BMP range \texttt{\textbf{[\textbackslash u0000-\textbackslash uFFFF]}}.}
 \label{fig:dfabmp}
 \end{figure}
 
-\section{Literal Optimizations}\label{section:simdopt}
-Searching for a pattern that consists only of string literals e.g \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
-
-In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{\%foobar\%}} and apply one of the two algorithms explained below based on the size of the pattern.
-
 \subsection{EPSM Algorithm}
-Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length $m$. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
+Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length $m$. 
+
+In our implementation, we implement the first search procedure EPSMa and we use it only for short patterns $(m <= 16)$ as its performance degrades as the length of the pattern increases. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
 
 The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m' = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
 
