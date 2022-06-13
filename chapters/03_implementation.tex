@@ -62,8 +62,7 @@ If the pattern simplicity check fails, the DFA generator traverses the parse tre
     \draw [arrow] (config) -- node[] {} (codegen);
     
     \end{tikzpicture}
-    \caption{High Level System Architecture.}
-    \label{fig:sa}
+    \caption{High Level System Architecture.}\label{fig:sa}
 \end{figure}
 
 \section{Parser}\label{section:parser}
@@ -173,8 +172,7 @@ The parser produces a parse tree and passes it to the DFA Generator module. This
     \draw [arrow] (dfa) -- node[] {} (mindfa);
 
     \end{tikzpicture}
-    \caption{DFA Generator Module.}
-    \label{fig:sa2}
+    \caption{DFA Generator Module.}\label{fig:sa2}
 \end{figure}
 
 \subsection{Finite Automata Representation}
@@ -222,8 +220,7 @@ Representing each transition as range instead of a single character simplifies t
   \path    (s1) edge                          node {$d$} (s2);
 
 \end{tikzpicture}
-\caption{DFA with regular transitions.}
-\label{fig:automatonrangea}
+\caption{DFA with regular transitions.}\label{fig:automatonrangea}
 \end{subfigure}
 \par\bigskip
 \begin{subfigure}[b]{\textwidth}
@@ -237,8 +234,7 @@ Representing each transition as range instead of a single character simplifies t
   \path (s0) edge              node {$[a-c]$} (s1);
   \path (s1) edge              node {$d$} (s2);
 \end{tikzpicture}
-\caption{Smaller DFA with transition ranges.}
-\label{fig:automatonrangeb}
+\caption{Smaller DFA with transition ranges.}\label{fig:automatonrangeb}
 
 \end{subfigure}
 \caption{Generated DFA for pattern \textbf{(a|b|c)d}.}\label{fig:automatonrange}
@@ -291,8 +287,7 @@ ANTLR provides an abstract class \texttt{\textbf{RegexVisitor}} that contains me
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{tree.pdf}
-    \caption{Parse tree for the pattern \texttt{\textbf{[ab]c}}.}
-    \label{fig:parsetree}
+    \caption{Parse tree for the pattern \texttt{\textbf{[ab]c}}.}\label{fig:parsetree}
 \end{figure}
 
 Thompson's algorithm works recursively by breaking down a regular expression into its fundamental sub-expressions, from which the NFA is built using the following set of rules:
@@ -310,8 +305,7 @@ A character literal is represented by an automaton of two states as in Figure \r
   \path    (s0) edge                          node {$a$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton for the pattern \texttt{\textbf{a}}.}
-\label{fig:auto1}
+\caption{Automaton for the pattern \texttt{\textbf{a}}.}\label{fig:auto1}
 \end{figure}
 \subsubsection{Alternations}\label{epsremoval}
 A new state \texttt{\textbf{p}} is added with epsilon transition to the start state of each alternation.
@@ -367,8 +361,7 @@ An epsilon transition from state \texttt{\textbf{p0}} to state \texttt{\textbf{p
   \path    (p) edge                          node {$x$} (s3);
 \end{tikzpicture}}%
 
-\caption{Automaton construction steps for alternation pattern \texttt{\textbf{a|x}}.}
-\label{fig:auto2}
+\caption{Automaton construction steps for alternation pattern \texttt{\textbf{a|x}}.}\label{fig:auto2}
 \end{figure}
 \subsubsection{Concatenation}
 The initial state of the first automaton becomes the initial state of the new NFA. The accepting states of the first automaton are marked as not accepting. Moreover, the accept states of the second automaton are the accept states of the new NFA. Finally, an epsilon transition is added from each accept state of the first automaton to the initial states of the second automaton. Figure \ref{fig:auto3} shows the concatenation between two patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.
@@ -387,8 +380,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (p1) edge                          node {$c$} (p2);
 
 \end{tikzpicture}
-\caption{Automaton to recognize the concatenation of the patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.}
-\label{fig:auto3}
+\caption{Automaton to recognize the concatenation of the patterns \texttt{\textbf{a}} and \texttt{\textbf{bc}}.}\label{fig:auto3}
 \end{figure}
 \subsubsection{Quantifiers}
 \textbf{Kleene Star}: Row 1 in Table \ref{tab:regexquant} is the Kleene star \texttt{\textbf{*}} quantifier. It is an unbounded quantifier and is supported by adding a loop to the NFA. A new start state \texttt{\textbf{p}} is added with epsilon transition to the start state the automaton. Epsilon transitions from the accept states to \texttt{\textbf{p}} is added and \texttt{\textbf{p}} is marked as accept. An example for Kleene star is show in Figure \ref{fig:autoq1}.
@@ -404,13 +396,9 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s0) edge [loop above] node {$a$} (s0);
 
 \end{tikzpicture}
-\caption{Automaton to recognize pattern \texttt{\textbf{a*}}.}
-\label{fig:autoq1}
+\caption{Automaton to recognize pattern \texttt{\textbf{a*}}.}\label{fig:autoq1}
 \end{figure}
 
-
-
-\noindent
 \textbf{Optional (Zero or one)}: Row 2 in Table \ref{tab:regexquant} is the Optional quantifier \texttt{\textbf{?}}. It is a bounded quantifier and is  equivalent to the alternation of an NFA and the empty string epsilon, e.g., \texttt{\textbf{a?}} is equivalent to \texttt{\textbf{a|\epsilon}}. Figure \ref{fig:autoq3} shows an example Automaton.
 
 
@@ -424,8 +412,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (p) edge node {$a$} (s0);
 
 \end{tikzpicture}
-\caption{Automaton to recognize pattern \texttt{\textbf{a?}}.}
-\label{fig:autoq3}
+\caption{Automaton to recognize pattern \texttt{\textbf{a?}}.}\label{fig:autoq3}
 \end{figure}
 
 \noindent
@@ -444,8 +431,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s1) edge [loop above] node {$a$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton to recognize pattern \texttt{\textbf{a+}}.}
-\label{fig:autoq2}
+\caption{Automaton to recognize pattern \texttt{\textbf{a+}}.}\label{fig:autoq2}
 \end{figure}
 
 \newpage
@@ -465,8 +451,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s2) edge node {$a$} (s3);
 
 \end{tikzpicture}
-\caption{Automaton to recognize pattern \texttt{\textbf{a\{1,3\}}}.}
-\label{fig:autoq4}
+\caption{Automaton to recognize pattern \texttt{\textbf{a\{1,3\}}}.}\label{fig:autoq4}
 \end{figure}
 \subsubsection{Character Classes}
 \textit{Positive} character classes are treated the same way as alternations, e.g., NFA for character class \texttt{\textbf{[ax]}} is equivalent to NFA recognizing \texttt{\textbf{a|x}}. Figure \ref{fig:auto2} shows the resulting automaton.
@@ -485,8 +470,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s0) edge  node {$[0x0-0x7F]$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton for \texttt{\textbf{anyChar}}.}
-\label{fig:auto41}
+\caption{Automaton for \texttt{\textbf{anyChar}}.}\label{fig:auto41}
 \end{subfigure}
 \hfill
 \begin{subfigure}[b]{0.5\textwidth}
@@ -500,8 +484,7 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s0) edge  [bend right] node {$[0x78-0x78]$} (s1);
 
 \end{tikzpicture}
-\caption{Automaton for complement of \texttt{\textbf{[ax]}}.}
-\label{fig:auto42}
+\caption{Automaton for complement of \texttt{\textbf{[ax]}}.}\label{fig:auto42}
 \end{subfigure}\\
 
 
@@ -516,12 +499,10 @@ The initial state of the first automaton becomes the initial state of the new NF
   \path    (s0) edge node {$[0x62-0x77]$} (s1);
   \path    (s0) edge [bend right] node {$[0x79-0x7F]$} (s1);
 \end{tikzpicture}
-\caption{Automaton for Intersection between Automaton \ref{fig:auto41} and Automaton \ref{fig:auto42}}.
-\label{fig:auto43}
+\caption{Automaton for Intersection between Automaton \ref{fig:auto41} and Automaton \ref{fig:auto42}}.\label{fig:auto43}
 \end{subfigure}
 
-\caption{Automaton Construction Steps for negative character class \texttt{\textbf{[\textasciicircum ax]}}. Char \texttt{\textbf{a}} is hex \texttt{\textbf{0x61}} and Char \texttt{\textbf{x}} is \texttt{\textbf{0x78}}.}
-\label{fig:auto4}
+\caption{Automaton Construction Steps for negative character class \texttt{\textbf{[\textasciicircum ax]}}. Char \texttt{\textbf{a}} is hex \texttt{\textbf{0x61}} and Char \texttt{\textbf{x}} is \texttt{\textbf{0x78}}.}\label{fig:auto4}
 \end{figure}
 
 
@@ -573,8 +554,7 @@ Figure \ref{fig:ps1} shows an example conversion NFA to DFA for pattern \texttt{
   
 
 \end{tikzpicture}
-\caption{NFA for pattern \texttt{\textbf{xyz|xya}}.}
-\label{fig:ps11}
+\caption{NFA for pattern \texttt{\textbf{xyz|xya}}.}\label{fig:ps11}
 \end{subfigure}\hfill
 \par\bigskip % force a bit of vertical whitespace
 
@@ -594,12 +574,10 @@ Figure \ref{fig:ps1} shows an example conversion NFA to DFA for pattern \texttt{
   \path    (s2) edge node {$a$} (s4);
   
 \end{tikzpicture}
-\caption{DFA after applying powerset construction algorithm.}
-\label{fig:ps12}
+\caption{DFA after applying powerset construction algorithm.}\label{fig:ps12}
 \end{subfigure}
 
-\caption{Example conversion from NFA to DFA for pattern \texttt{\textbf{xyz|xya}}.}
-\label{fig:ps1}
+\caption{Example conversion from NFA to DFA for pattern \texttt{\textbf{xyz|xya}}.}\label{fig:ps1}
 \end{figure}
 
 \subsection{DFA Minimization}\label{dfamin}
@@ -654,8 +632,7 @@ Before the last step in the code generation algorithm above, we use the C++ \tex
 
 \begin{listing}[htbp]
 \inputminted[breaklines,frame=lines,linenos]{cpp}{code/ex.cpp}
-\caption{Generated C++ Code for pattern \texttt{\textbf{[a-z][0-9]}}.}
-\label{lst:cppex}
+\caption{Generated C++ Code for pattern \texttt{\textbf{[a-z][0-9]}}.}\label{lst:cppex}
 \end{listing}
 
 Generating high-level C++ code is easy to implement and debug, but this approach has some disadvantages (1) The optimizing C++ compiler is slow compared to the LLVM Compiler. (2) Slow disk access is needed as the generated code must first be written to the disk as the C++ compiler \texttt{\textbf{clang}} does not support compiling an in-memory string buffer. Therefore, The JIT Compiler has to read the LLVM IR from the disk before being JITed which adds extra latency. For these reasons, most of the code-generation work focused on the LLVM backend for these reasons.
@@ -677,8 +654,7 @@ Let us walk through an example of going from a DFA to LLVM IR and using the LLVM
   \path    (s1) edge                          node {$[0-9]$} (s2);
 
 \end{tikzpicture}
-\caption{DFA to recognize pattern \texttt{\textbf{[a-z][0-9]}}.}
-\label{fig:dfacodegenex}
+\caption{DFA to recognize pattern \texttt{\textbf{[a-z][0-9]}}.}\label{fig:dfacodegenex}
 \end{figure}
 
 Table \ref{tab:llvminst} lists the LLVM IR instructions and their meaning needed to understand the code generated.
@@ -763,20 +739,17 @@ The last step after the optimization is passing the optimized IR to the JIT comp
 
 \begin{longlisting}
 \inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{llvm}{code/irbefore.ll}
-\caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}
-\label{lst:llvmex}
+\caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}\label{lst:llvmex}
 \end{longlisting}
 
 \begin{listing}[H]
 \inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{llvm}{code/irafter.ll}
-\caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} after LLVM optimizations.}
-\label{lst:llvmexs}
+\caption{Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} after LLVM optimizations.}\label{lst:llvmexs}
 \end{listing}
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{\includegraphics[width=1.42\textwidth]{code/cfga3.pdf}}%
-    \caption{Annotated CFG for Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}
-    \label{fig:annocfg}
+    \caption{Annotated CFG for Generated LLVM Code for pattern \texttt{\textbf{[a-z][0-9]}} before LLVM optimizations.}\label{fig:annocfg}
 \end{figure}
 
 \section{Unicode}
@@ -790,7 +763,7 @@ Unicode level 1 support (Basic Unicode Support) defines the guidelines for minim
     \item \textbf{Hex Notation}: An implementation must provide a means for expressing any Unicode code point (from U+0000 to U+10FFFF) using the hexadecimal code point encoding to meet these criteria.
     \item \textbf{Properties}: Unicode properties provide a convenient way to construct character classes of groups of code points specified by Unicode. E.g., Unicode general category property allows the user to express a category in a regular expression, such as "upper case letter" which encompasses all characters categorized as upper case letters in all of the world's writing systems.
     \item \textbf{Subtraction and Intersection}: An implementation must provide mechanisms for the union, intersection, and set-difference of sets of characters within regular expression character class expressions.
-    \item \textbf{Simple Word Boundaries}: An engine supporting the test for word boundaries, e.g., the pattern \textbf{\textbackslash b} must be extended to include characters with the alphabetic property, characters from the Unicode decimal general category, zero-width joiners, or zero-width non-joiners.
+    \item \textbf{Simple Word Boundaries}: An engine supporting the test for word boundaries, e.g., the pattern \texttt{\textbf{\textbackslash b}} must be extended to include characters with the alphabetic property, characters from the Unicode decimal general category, zero-width joiners, or zero-width non-joiners.
     \item \textbf{Simple Loose Matches}: An engine supporting case-less matching must be extended to include at the very least the simple, default Unicode case-insensitive matching. Also, if it supports case conversions, it shall provide at least the simple, default Unicode case folding.
     \item \textbf{Line Boundaries}: A regular expression engine that supports line boundaries must support CRLF, LF, CR, NEL (U+0085), PARAGRAPH SEPARATOR (U+2029), and LINE SEPARATOR (U+2028).
     \item \textbf{Code Points}: An essential requirement is that Unicode text is semantically interpreted by code point rather than code unit.
@@ -831,8 +804,7 @@ While UTF-32 is easy to implement and makes the DFA generation step easier and r
 
 \begin{listing}[H]
 \inputminted[breaklines=true,frame=lines,linenos,fontsize=\small]{cpp}{code/utf32.cpp}
-\caption{Generated C++ code for the pattern \texttt{\textbf{\textsterling}} with UTF-32 encoding.}
-\label{lst:utf32nextbyte}
+\caption{Generated C++ code for the pattern \texttt{\textbf{\textsterling}} with UTF-32 encoding.}\label{lst:utf32nextbyte}
 \end{listing}
 
 \subsection{UTF-8}
@@ -861,8 +833,7 @@ At matching time, the matching function reads the input text one byte at a time,
 
 \end{tikzpicture}
 \end{adjustbox}
-\caption{DFA to recognize pattern \texttt{9\textvisiblespace \textsterling} with UTF-8.}
-\label{fig:utf8exdfa}
+\caption{DFA to recognize pattern \texttt{9\textvisiblespace \textsterling} with UTF-8.}\label{fig:utf8exdfa}
 \end{figure}
 
 
@@ -935,8 +906,7 @@ In our implementation, we detect these simple literal patterns, e.g., \texttt{\t
 
 \end{tikzpicture}
 \end{adjustbox}
-\caption{DFA to decode valid UTF-8 code point for BMP range \texttt{\textbf{[\textbackslash u0000-\textbackslash uFFFF]}}.}
-\label{fig:dfabmp}
+\caption{DFA to decode valid UTF-8 code point for BMP range \texttt{\textbf{[\textbackslash u0000-\textbackslash uFFFF]}}.}\label{fig:dfabmp}
 \end{figure}
 
 \subsection{EPSM Algorithm}
@@ -968,8 +938,7 @@ The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. Th
 \bitbox{1}{1} & \bitbox{1}{0} & \bitbox{1}{1} & \bitbox{1}{0}
 \end{leftwordgroup} \\
 \end{bytefield}
-    \caption{Example for \texttt{\textbf{wscmp(a,b)}} where $\alpha = 4$, $\gamma=4$ and $w = 16$.}
-    \label{fig:wscmpex}
+\caption{Example for \texttt{\textbf{wscmp(a,b)}} where $\alpha = 4$, $\gamma=4$ and $w = 16$.}\label{fig:wscmpex}
 \end{figure}
 
 For the searching phase, we define the word-size compare instruction (\texttt{\textbf{wscmp}}) that compares its two w-bit sized inputs where $w$ is the number of bits in a computer word  handled as a block of $\alpha$ characters. Figure \ref{fig:wscmpex} shows an example application of wscmp(A,B). This instruction is equivalent to the following specialized SIMD instructions:
@@ -1078,7 +1047,6 @@ Figure \ref{fig:simdmatchalgo} shows an example application of the algorithm for
 \end{leftwordgroup} \\
 \end{bytefield}
 
-\caption{Example for SIMD string matching algorithm with 64-bit registers.}
-\label{fig:simdmatchalgo}
+\caption{Example for SIMD string matching algorithm with 64-bit registers.}\label{fig:simdmatchalgo}
 \end{figure}
 

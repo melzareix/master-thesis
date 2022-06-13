@@ -67,8 +67,7 @@ Finite automata are defined formally as a 5-tuple, $(Q, Σ, T, q0, F)$ consistin
 
 
 \end{tikzpicture}
-\caption{Example of a Finite Automata that recognizes the pattern \texttt{\textbf{ab}} or \texttt{\textbf{b}}.}
-\label{fig:fsm}
+\caption{Example of a Finite Automata that recognizes the pattern \texttt{\textbf{ab}} or \texttt{\textbf{b}}.}\label{fig:fsm}
 \end{figure}
 
 Finite Automata can be represented as a state transition diagram. Figure \ref{fig:fsm} shows a state transition diagram where $Q = \{q0, q1, q2, q3, q4\}$, $\Sigma = \{a, b\}$, $F = \{q2, q3\}$. In the state transition diagram, states are represented by circles. (The numbers inside the circles are labels for clarity; they are not part of how the machine works.). A finite automaton has two special states: the start state $q0$ and the accept states $F = \{q2, q3\}$. Start states are depicted with lone arrowheads pointing at them, and accept states are drawn as a double circle.
@@ -95,8 +94,7 @@ The automata we have been discussing is called a deterministic finite automaton 
 
 
 \end{tikzpicture}
-\caption{Example of a Non-deterministic Finite Automata.}
-\label{fig:nfafsm}
+\caption{Example of a Non-deterministic Finite Automata.}\label{fig:nfafsm}
 \end{figure}
 
 Figure \ref{fig:nfafsm} shows an example of an NFA. At state $q0$ and reading the character $b$, the automata can either stay at $q0$ or transition to $q1$. When two or more transitions are applicable, the NFA clones itself into appropriately many copies, each one following a different transition. Therefore, simulating or following the NFA transitions can be exponential in the number of the states $n$, i.e., $O(2^{n})$.
@@ -232,8 +230,7 @@ if (a > 0) {
 c = a - b;
 d = a + b;
 \end{minted}
-\caption{Code Snippet for a program \textit{not} in SSA form.}
-\label{lst:cfgcode}
+\caption{Code Snippet for a program \textit{not} in SSA form.}\label{lst:cfgcode}
 \end{listing}
 
 The code in Listing \ref{lst:cfgcode} can be represented as a Control Flow Graph (CFG) as shown in Figure \ref{fig:cfg1}. A control flow graph is a graph representation of all paths that a program can traverse during its execution. The CFG in Figure \ref{fig:cfg1} consists of four nodes representing the entry node, two nodes, one for each path for the control flow condition $a > 0$, and the exit block.
@@ -254,8 +251,8 @@ The code in Listing \ref{lst:cfgcode} can be represented as a Control Flow Graph
   \path[->] (b1) edge (b3);
   \path[->] (b2) edge (b3);
 
-\end{tikzpicture}\caption{CFG for source code in Listing \ref{lst:cfgcode}.}
-\label{fig:cfg1}
+\end{tikzpicture}
+\caption{CFG for source code in Listing \ref{lst:cfgcode}.}\label{fig:cfg1}
 \end{figure}
 
 Applying the first rule to the code and giving distinguishing subscripts to all the variables results in the introduction of new variables ${a_2, b_2, c_2}$. For clarity, we also renamed the old variables to ${a_1, b_1, c_1}$. The resulting CFG is shown in Listing \ref{fig:cfg2}.
@@ -274,8 +271,8 @@ Applying the first rule to the code and giving distinguishing subscripts to all 
   \path[->] (b1) edge (b3);
   \path[->] (b2) edge (b3);
 
-\end{tikzpicture}\caption{CFG after applying the first SSA transformation rule.}
-\label{fig:cfg2}
+\end{tikzpicture}
+\caption{CFG after applying the first SSA transformation rule.}\label{fig:cfg2}
 \end{figure}
 
 We see only one problem in the CFG shown in Figure \ref{fig:cfg2}. Depending on the path the control flow went, both usages of $b$ in the bottom block might be referring to either $b_1$ or $b_2$. We apply the second rule and use the phi function $\phi$ to choose the correct value, depending on the control flow.
@@ -297,10 +294,9 @@ Calculating the value of the phi function $\phi$ for an arbitrary control-flow g
   \path[->] (b1) edge (b3);
   \path[->] (b2) edge (b3);
 
-\end{tikzpicture}\caption{CFG after applying the second SSA transformation rule.}
-\label{fig:cfg3}
+\end{tikzpicture}
+\caption{CFG after applying the second SSA transformation rule.}\label{fig:cfg3}
 \end{figure}
-
 
 \subsection{Jit Compilation}
 Just-in-time (JIT) is a dynamic compilation method for programs that involves compilation during a program's execution (run-time) rather than the traditional ahead-of-time compilation (AOT) that compiles all code before a program starts to execute. JIT compilation is more commonly used to translate bytecode (e.g., LLVM IR) to machine code, then executed.

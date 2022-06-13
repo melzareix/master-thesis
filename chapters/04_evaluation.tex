@@ -494,9 +494,7 @@ The fourth and last pattern alternates the first and second pattern and matches 
     \end{axis}
     
     \end{tikzpicture}
-
-    \caption{Performance Evaluation results on Logs Benchmark without Boost Engine.}
-    \label{fig:graphlogbench}
+    \caption{Performance Evaluation results on Logs Benchmark without Boost Engine.}\label{fig:graphlogbench}
 \end{figure}
 
 Overall, the results on this benchmark show that adding JIT compiling to even a less optimized engine can be faster than a heavily optimized but interpreted engine. When the number of rows to process is large, the cost of compilation is amortized over the large number of runs required.
