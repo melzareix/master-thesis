@@ -13,7 +13,7 @@ Future work should focus on extending the engine features and optimizations. Pos
 \begin{itemize}
     \item \textbf{Full Unicode Support}: Full Unicode Level 1 support should be added, followed by Unicode level 2 support.
     \item \textbf{Regex Features}: Currently, we only support an essential subset of regular expressions features. We could extend the engine also to report the matching boundaries. Word-boundaries, capture groups, anchored matches, and lookaheads are also popular features that could be useful to implement and test its performance.
-    \item \textbf{Adaptive Compilation}: The engine currently always JITs the DFA before execution which is costly for patterns that are executed on a small number of rows. We could improve this by doing adaptive compilation where we dynamically switch from interpretation to compilation only when needed.
+    \item \textbf{Adaptive Compilation}: The engine currently always generates code and JITs the DFA before execution, which is costly for patterns that are executed on a small number of rows. We could improve this by doing adaptive compilation where we dynamically switch from interpretation to compilation only when needed.
 \end{itemize}
 
 While achieving good performance, the current engine only includes a small subset of optimizations. We can extend it to include:

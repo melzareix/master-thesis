@@ -20,7 +20,7 @@ Any of the words \textbf{cat}, \textbf{dog} or \textbf{turtle}. & \texttt{\textb
 \hline
 \end{tabular}
 \end{adjustbox}
-\caption{Examples of Regular Expressions.}\label{tab:regexsamp}
+\caption{Examples of regular expressions.}\label{tab:regexsamp}
 \end{table}}
 
 A regular expression is a textual pattern that regular expressions engines compile into a tiny program explicitly designed to identify that pattern. This pattern can be used to find, search for, sub-string, or split text. Regular expressions are beneficial for a variety of tasks, such as:
@@ -67,7 +67,7 @@ Finite automata are defined formally as a 5-tuple, $(Q, Σ, T, q0, F)$ consistin
 
 
 \end{tikzpicture}
-\caption{Example of a Finite Automata that recognizes the pattern \texttt{\textbf{ab}} or \texttt{\textbf{b}}.}\label{fig:fsm}
+\caption{Example of a finite automaton that recognizes the pattern \texttt{\textbf{ab}} or \texttt{\textbf{b}}.}\label{fig:fsm}
 \end{figure}
 
 Finite Automata can be represented as a state transition diagram. Figure \ref{fig:fsm} shows a state transition diagram where $Q = \{q0, q1, q2, q3, q4\}$, $\Sigma = \{a, b\}$, $F = \{q2, q3\}$. In the state transition diagram, states are represented by circles. (The numbers inside the circles are labels for clarity; they are not part of how the machine works.). A finite automaton has two special states: the start state $q0$ and the accept states $F = \{q2, q3\}$. Start states are depicted with lone arrowheads pointing at them, and accept states are drawn as a double circle.
@@ -94,7 +94,7 @@ The automata we have been discussing is called a deterministic finite automaton 
 
 
 \end{tikzpicture}
-\caption{Example of a Non-deterministic Finite Automata.}\label{fig:nfafsm}
+\caption{Example of a non-deterministic finite automaton.}\label{fig:nfafsm}
 \end{figure}
 
 Figure \ref{fig:nfafsm} shows an example of an NFA. At state $q0$ and reading the character $b$, the automata can either stay at $q0$ or transition to $q1$. When two or more transitions are applicable, the NFA clones itself into appropriately many copies, each one following a different transition. Therefore, simulating or following the NFA transitions can be exponential in the number of the states $n$, i.e., $O(2^{n})$.
