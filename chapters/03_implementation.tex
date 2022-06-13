@@ -11,17 +11,19 @@ The inputs to the engine illustrated as yellow boxes in Figure \ref{fig:sa} are 
 \centering
 \begin{adjustbox}{width=\textwidth,center=\textwidth}
 \small
-\begin{tabular}{|l|l|l|}
+\begin{tabularx}{\textwidth}{|l|X|l|}
 \hline
 Option        & Description & Default  \\
 \hline
-Codegen backend & The Codegen backend to use. Possible options are {LLVM, CPP} & LLVM\\
+Codegen backend & The Codegen backend to use. Possible values: \texttt{\textbf{LLVM}} or \texttt{\textbf{CPP}}. & \texttt{\textbf{LLVM}}\\
 \hline
-Bytedfa & If true the DFA is utf-8 encoded otherwise it uses utf-32 & false \\
+Bytedfa & If true the DFA is UTF-8 encoded otherwise it uses UTF-32. & \texttt{\textbf{false}} \\
 \hline
-AsciiEncoding & If true disables UTF-8 handling in the generated code & false \\
+AsciiEncoding & If true disables Unicode handling in the generated code. & \texttt{\textbf{false}} \\
 \hline
-\end{tabular}
+OptimizationLevel & Optimization Level for LLVM optimizer (or clang for C++). Possible values: \{\texttt{\textbf{O0,O1,O2,O3,Os,Oz}}\}. & \texttt{\textbf{O2}}\\
+\hline
+\end{tabularx}
 \end{adjustbox}
 \caption[CLI Configuration Options]{CLI Configuration Options.}\label{tab:cliconf}
 \end{table}}
@@ -704,7 +706,7 @@ Lines (23-41) repeat the same process but for the second state, and the check is
 
 In the next step, after generating the LLVM IR, The LLVM optimizer is used to validate and optimize the IR. The number and type of optimization passes applied are configurable via the optimization level configuration option.
 
-The LLVM code generator uses this optimization level to determine which optimization passes it should apply during the machine code generation. Each optimization level applies different optimizations that focus on either code size reduction or increased code performance. Table \ref{tab:optlevels} shows the default optimization levels shipped with LLVM. By default, we apply the \textbf{-O2} optimization level, which is a moderate level of optimization that enables most optimizations.
+The LLVM code generator uses this optimization level to determine which optimization passes it should apply during the machine code generation. Each optimization level applies different optimizations that focus on either code size reduction or increased code performance. Table \ref{tab:optlevels} shows the default optimization levels shipped with LLVM. By default, we apply the \textbf{-O2} optimization level, which is a moderate level of optimization that enables most optimizations. The optimization level can be configured from the CLI as shown in Table \ref{tab:cliconf}.
 
 {\renewcommand{\arraystretch}{1.1}% for the vertical padding
 \begin{table}[H]
@@ -851,7 +853,7 @@ While UTF-32 is easy to implement and makes the DFA generation step easier and t
 \end{listing}
 
 \subsection{UTF-8}
-UTF-8 is the default encoding of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism inside the DFA. The engine treats the RegExp as a sequence of valid UTF-8 bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
+UTF-8 is the default encoding of the engine. In order to support UTF-8, the engine embeds the UTF-8 decoding mechanism inside the DFA. The engine treats the regular expression as a sequence of valid UTF-8 bytes. It then generates a state for each byte resulting in a ByteDFA with an alphabet of $[0x0 - 0xFF]$.
 
 For example, to generate a DFA the recognizes the pattern ``\texttt{9\textvisiblespace \textsterling}" that matches the digit nine followed by a space character then a sterling pound character which corresponds to the following Unicode code-points sequence \texttt{\textbf{\textbackslash u0039\textbackslash u0020 \textbackslash u00A3}}. These code points are equivalent to the following UTF-8 byte sequences \texttt{\textbf{0x39 0x20 0xC2 0xA3}} The engine reads the pattern as a sequence of bytes and generates a DFA with a single state representing each code unit. Figure \ref{fig:utf8exdfa} shows the resulting DFA. The highlighted part shows the states that recognize the sterling pound code point.
 
@@ -951,10 +953,10 @@ $\langle0xEE-0xEF\rangle \langle0x80-0xBF\rangle \langle0x80-0xBF\rangle$
 \section{Literal Optimizations}\label{section:simdopt}
 Searching for a pattern that consists only of string literals e.g \texttt{\textbf{foobar}} is a common use-case for regular expressions matching in databases. A fast and smart regular expression engine can detect these patterns and optimize the search algorithm. The key to optimizing the search for literals on modern CPUs is how fast we can identify a candidate for a match. That is why we use Single Instruction Multiple Data (SIMD) instructions when we detect a literal. SIMD instructions can examine up to sixty-four bytes in a single loop iteration, making it very fast.
 
-In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{.*foobar.*}} and apply one of the two algorithms explained below based on the size of the pattern.
+In our implementation, we detect these simple literal patterns, e.g., \texttt{\textbf{\%foobar\%}} and apply one of the two algorithms explained below based on the size of the pattern.
 
 \subsection{EPSM Algorithm}
-Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
+Exact Packed String Matching (EPSM) \cite{epsm} is a string matching algorithm that makes use of bit-parallelism by packing several characters into a bit-word and partitioning string S into chunks $S_i$. A packed pattern bit-word is compared to these bit-word-sized chunks. Shift and bitwise-and operations are performed to compare the text chunks with the pattern. The algorithm is based on four different search procedures applied based on the pattern length $m$. In our implementation, we use this algorithm only for short patterns $(m <= 16)$ as its performance degrades as the length of the patterns increase. Under these limitations, EPSM is very fast and runs in O(n). The asymptotic run-time for the general case is $O(n \times m)$.
 
 The pseudo-code of the EPSMa algorithm is shown in Algorithm \ref{alg:espma}. The algorithm starts by a processing phase (lines 3-8) on the prefix of the pattern of length $m' = min(m, \alpha/2)$ where $\alpha$ is the number of characters of the alphabet that fit in a single word e.g for 128-bit registers and $\gamma$ the number of bits per character = 8, $\alpha = 16$. If $m = m'$ the algorithm pre-processes and searches the whole pattern. Otherwise, the algorithm acts as a filter that searches for the occurrences of the prefix of length $m'$ then naively checking the whole occurrence of the pattern if an occurrence of the prefix is found. In the processing phase, the algorithm  constructs an array $B$ of $m'$ strings each of length $\alpha$. The $i$-th string in array $B$ consists of $\alpha$ copies of the character $p_i$.
 
@@ -998,6 +1000,38 @@ The searching phase (lines 9-23) processes the text $t$ in blocks of $\alpha$ ch
 occurs at the beginning at position $j$ of $T_i$ if and only if $r_j = 1$. If $m = m'$ then the whole pattern occurs and we can report the occurrences of the pattern at positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$. Otherwise, we know that at the same positions the prefix of the pattern matches and the algorithm checks the occurrences beginning at those positions. At the end, the algorithm naively checks the $m' - 1$ possible occurrences crossing the blocks $T_i$ and $T_i+1$ are naively checked by the algorithm.
 
 The worst-case time complexity of the algorithm is $O(nm)$ as a naive check could be required for each position of the  However, for small patterns, the algorithm has a $O(n+occ)$ time complexity, where $occ$ is the number of occurrences of the pattern $p$ in the text $t$.
+
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\State \alpha \gets the number of characters that fit in a single word. \Comment{For 128-bit registers and 8 bits per character $\alpha = 16$}
+\Function{EPSMa}{$p,m,t,n$} \Comment{pattern, pattern length, text, text length}
+    \State $m' \gets min(\alpha/2, m)$
+    \For{$i \gets 0$ to $m' - 1$}                    
+       \For{$i \gets 0$ to $\alpha - 1$}
+            \State $B[i] \gets p[i]$
+       \EndFor
+    \EndFor
+    \For{$i \gets 0$ to $(n/\alpha) - 1$}
+        \State $r \gets 1^\alpha$
+        \For{$j \gets 0$ to $m' - 1$}
+            \State $s_j \gets wscmp(T_i, B_j)$
+            \State $r \gets r \& (s_j << j)$
+        \EndFor
+        \If{$m = m'$}
+            \State report occurrences at $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$
+        \Else
+            \State check positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$
+        \EndIf
+        \For{$j \gets 0$ to $m - 2$}
+            \State check positions $(i + 1)\alpha - j$
+        \EndFor
+
+    \EndFor
+
+\EndFunction
+\end{algorithmic}
+\caption{EPSMa Algorithm}\label{alg:espma}
+\end{algorithm}
 
 \subsection{Generic SIMD Algorithm}
 This Generic SIMD algorithm \cite{simdalgo} is slower than the EPSMa algorithm but applies to patterns of any size. This algorithm's main idea is to use the equality of the pattern's initial and last characters as a predicate for a potential match. The pattern's two characters (first and last) are copied in two SIMD registers, $R1$ and $R2$, respectively. Then in each iteration of the algorithm, two chunks of strings are loaded into two other SIMD registers. The first chunk $C1$ is read from offset $i$ and the second chunk $C2$ is read from offset $i + k - 1$, where $k$ is the pattern length. Then the algorithm computes a vector expression $M1 = (R1 = C1)$ and $M2 = (R2 = C2)$ then $M = (M1 \& M2)$ that yields a bit mask where a set bit in the mask signals a position of potential match. At last, only at these positions exact comparisons of the pattern and the text are performed.
@@ -1060,34 +1094,3 @@ Figure \ref{fig:simdmatchalgo} shows an example application of the algorithm for
 \label{fig:simdmatchalgo}
 \end{figure}
 
-\begin{algorithm}[H]
-\begin{algorithmic}[1]
-\State \alpha \gets the number of characters that fit in a single word. \Comment{For 128-bit registers and 8 bits per character $\alpha = 16$}
-\Function{EPSMa}{$p,m,t,n$} \Comment{pattern, pattern length, text, text length}
-    \State $m' \gets min(\alpha/2, m)$
-    \For{$i \gets 0$ to $m' - 1$}                    
-       \For{$i \gets 0$ to $\alpha - 1$}
-            \State $B[i] \gets p[i]$
-       \EndFor
-    \EndFor
-    \For{$i \gets 0$ to $(n/\alpha) - 1$}
-        \State $r \gets 1^\alpha$
-        \For{$j \gets 0$ to $m' - 1$}
-            \State $s_j \gets wscmp(T_i, B_j)$
-            \State $r \gets r \& (s_j << j)$
-        \EndFor
-        \If{$m = m'$}
-            \State report occurrences at $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$
-        \Else
-            \State check positions $i\alpha + \{r\}$ where r = $\{k | \, 0 \leq i < \alpha$ and $r_k = 1\}$
-        \EndIf
-        \For{$j \gets 0$ to $m - 2$}
-            \State check positions $(i + 1)\alpha - j$
-        \EndFor
-
-    \EndFor
-
-\EndFunction
-\end{algorithmic}
-\caption{EPSMa Algorithm}\label{alg:espma}
-\end{algorithm}

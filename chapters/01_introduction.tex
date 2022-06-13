@@ -3,11 +3,11 @@
 \chapter{Introduction}\label{chapter:introduction}
 
 \section{Motivation}
-String processing tasks are frequently used in analytical queries that power business intelligence. Aside from sub-string matching, which the like operator \texttt{\textbf{like}} in SQL, popular DBMSs also support regular expressions.
+String processing tasks are frequently used in analytical queries that power business intelligence. Aside from sub-string matching, which is given by the \texttt{\textbf{like}} operator in SQL, popular DBMSs also support regular expressions.
 
 Regular expressions are textual patterns used for text analytics and information extraction using standardized concise syntax. Regular expressions have a more complex usage of wildcards and can be constructed to create a more complex and precise match than the \texttt{\textbf{like}} operator. 
 
-Regular Expressions have been used in many applications throughout the data analytics pipeline in recent years. Such applications include recommendation systems \cite{recsys1}, natural language processing (NLP) \cite{nlp1, nlp2}, and graph processing \cite{graph1}. These applications typically involve data sets of an increasingly large size, reaching tens or hundreds of Gigabytes. The large datasets raise a challenge for regular expressions engines in DBMSs regarding  executing the regular expressions queries efficiently.
+Regular Expressions have been used in many applications throughout the data analytics pipeline in recent years. Such applications include recommender systems \cite{recsys1}, natural language processing (NLP) \cite{nlp1, nlp2}, and graph processing \cite{graph1}. These applications typically involve data sets of an increasingly large size, reaching tens or hundreds of Gigabytes. The large datasets raise a challenge for regular expressions engines in DBMSs regarding executing the regular expressions queries efficiently.
 
 Traditional general-purpose regular expressions engines (e.g., Boost Regex \cite{Boost}, RE2 \cite{re2}) are interpreted engines that, for each regular expression, build an in-memory data structure (or a small program) that can match that regular expression. This approach works well for small datasets, but larger datasets with millions of rows suffer from (1) Indirection via memory access which wastes 100s of CPU cycles \cite{cpumemgap}. (2) Data is not kept in CPU registers, and contents are evicted regularly.
 

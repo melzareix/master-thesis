@@ -20,7 +20,7 @@ Benchmarking the compilation time aims to:
     \item See what the effect of using different UTF encoding mechanisms on the compilation time for each backend is.
 \end{enumerate}
 
-In the following benchmarks, for each backend and encoding mechanism, we pass a text file containing a list of RegExps. Each backend reads the file line by line, compiles the pattern to a DFA, and finally generates code that matches the pattern and JIT into a function that can be used to match the pattern.
+In the following benchmarks, for each backend and encoding mechanism, we pass a text file containing a list of regular expressions. Each backend reads the file line by line, compiles the pattern to a DFA, and finally generates code that matches the pattern and JIT into a function that can be used to match the pattern.
 
 \subsection{Common Patterns Benchmark}\label{cmnpatt}
 RegExLib \cite{regexlib} is a popular Regular Expressions repository on the Web, with expressions for matching URIs, HTML code, C style strings, Java code, SQL queries, spam, etc. We extracted the top ten rated non-duplicate patterns (listed in Table \ref{tab:cmpbench}) from RegExLib to use in this benchmark.
@@ -126,7 +126,7 @@ ytick style={color=black}
 
 
 \subsection{GitHub SQL Benchmark}
-The results from the previous benchmark in Subsection \ref{cmnpatt} were promising and aligned with our assumptions. To further test our assumptions, we created another benchmark by scraping $524$ RegExps from open-source projects on GitHub. These projects were SQL projects, and patterns are SQL-flavored regular expressions. $77$ of these patterns contain Unicode characters, which would showcase the performance of the engine on Unicode. Table \ref{tab:samplesql} shows a sample of these patterns.
+The results from the previous benchmark in Subsection \ref{cmnpatt} were promising and aligned with our assumptions. To further test our assumptions, we created another benchmark by scraping $524$ regular expressions from open-source projects on GitHub. These projects were SQL projects, and patterns are SQL-flavored regular expressions. $77$ of these patterns contain Unicode characters, which would showcase the performance of the engine on Unicode. Table \ref{tab:samplesql} shows a sample of these patterns.
 
 {\renewcommand{\arraystretch}{1.2}% for the vertical padding
 \begin{table}[H]
@@ -229,11 +229,11 @@ In conclusion, the two benchmarks in this section confirmed our assumptions rega
 
 \section{Matching Performance Evaluation}
 
-In this section, We evaluate the RegExp matching performance of our prototype engine (with its two backends and encoding mechanisms) against other popular C++ regular expressions engines \textbf{\{RE2, PCRE2, Boost\}}.
+In this section, We evaluate the regular expressions matching performance of our prototype engine (with its two backends and encoding mechanisms) against other popular C++ regular expressions engines \textbf{\{RE2, PCRE2, Boost\}}.
 
-This benchmark aims to answer our research question in Section \ref{researchq} If our prototype engine with code-generation and JIT compilation on top of LLVM can be performant and beat other popular RegExp engines.
+This benchmark aims to answer our research question in Section \ref{researchq} If our prototype engine with code-generation and JIT compilation on top of LLVM can be performant and beat other popular regular expressions engines.
 
-In the following benchmarks, for each engine, we pass a RegExp pattern and input text (data-set). Each engine reads the pattern, compiles it to its internal representation, and then tries to match the pattern for each line in the data set.
+In the following benchmarks, for each engine, we pass a regular expression and input text (data-set). Each engine reads the pattern, compiles it to its internal representation, and then tries to match the pattern for each line in the data set.
 
 \subsection{Engines}
 RE2 \cite{re2} is a C++ software library for regular expressions developed and used by Google. It uses a finite-state machine based matching that guarantees that run-time increases linearly (not exponentially) with the input size.
@@ -349,7 +349,7 @@ The reasoning behind our slowdown is on these patterns can be optimized into str
 
 The results also show that our implementation using UTF-32 was faster than UTF-8 with a factor of $2x$. As both, the patterns and text do not include Unicode, the compilation time impact on UTF-32 is minimal, and at run-time, it has an overall smaller number of states that increase the matching speed.
 
-This benchmark shows the importance of RegExp optimizations for patterns on performance, especially with a low number of rows where there are not many performance gains from the compilation.
+This benchmark shows the effect of optimizations on regular expressions matching performance, especially with a low number of rows where there are not many performance gains from the compilation.
 
 \subsection{Logs Benchmark}
 
@@ -359,7 +359,7 @@ In this benchmark, we used the \textit{Spark Logs} dataset from Loghub which con
 
 This benchmark aims to present a real scenario for our use case with tens of millions of rows and patterns that aren't too complex but useful for analysis.
 
-{\renewcommand{\arraystretch}{1.3}% for the vertical padding
+{\renewcommand{\arraystretch}{1.2}% for the vertical padding
 \begin{table}[H]
 \centering
 % \begin{adjustbox}{width=1.2\textwidth,center=\textwidth}
